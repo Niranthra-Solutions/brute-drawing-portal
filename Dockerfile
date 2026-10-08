@@ -68,7 +68,7 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     DOTNET_EnableDiagnostics=0 \
     Database__Provider=Sqlite \
     Database__AutoMigrate=true \
-    ConnectionStrings__Default="Data Source=/app/App_Data/trail.db" \
+    ConnectionStrings__Default="Data Source=/app/App_Data/portal.db" \
     Storage__RootPath=/app/App_Data/files \
     Email__FileDropPath=/app/App_Data/mail \
     Email__Mode=Smtp \
