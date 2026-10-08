@@ -47,8 +47,7 @@ export default function DrawingsAdminPage() {
   const list = useQuery({
     queryKey: ["drawings", { ...f, q }],
     queryFn: () =>
-      api.get<Paged<Drawing>>("/api/drawings", {
-        q,
+      api.get<Paged<Drawing>>("/api/drawings", { q,
         categoryId: f.categoryId,
         makeId: f.makeId,
         voltageV: f.voltageV,
