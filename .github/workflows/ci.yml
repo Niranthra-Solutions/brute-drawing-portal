@@ -17,13 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/itsapk/brute-drawing-portal
+  IMAGE_NAME: ghcr.io/itsapk/amaron-brute-drawing-portal
   CONTAINER_NAME: drawing-portal
   DATA_VOLUME: drawing-portal-data      # holds the database, uploaded drawings and the generated JWT secret - survives redeploys
   SERVER_PORT: 3250                     # port on the server (point your reverse proxy / domain here)
   CONTAINER_PORT: 8080                  # port the Dockerfile listens on
-  SITE_URL: https://brute-drawing.niranthra.online
-  APPLICATION: Brute Drawing Portal
+  SITE_URL: https://drawing.niranthra.online
+  APPLICATION: Amaron Brute Drawing Portal
 
 jobs:
 
@@ -374,13 +374,6 @@ jobs:
               -p ${{ env.SERVER_PORT }}:${{ env.CONTAINER_PORT }} \
               --restart unless-stopped \
               -v ${{ env.DATA_VOLUME }}:/app/App_Data \
-              -e Portal__PublicBaseUrl="${{ env.SITE_URL }}" \
-              -e Portal__TrustForwardedHeaders=true \
-              -e Auth__TestAdmin__Enabled="${{ vars.TEST_ADMIN_ENABLED || 'true' }}" \
-              -e Portal__SeedSampleData="${{ vars.SEED_SAMPLE_DATA || 'true' }}" \
-              -e Email__Mode="${{ vars.EMAIL_MODE || 'File' }}" \
-              -e Email__Smtp__Password="${{ secrets.SMTP_PASSWORD }}" \
-              -e Jwt__Secret="${{ secrets.JWT_SECRET }}" \
               --label "deployed_at=$(date '+%Y-%m-%d %H:%M:%S UTC')" \
               --label "commit=${{ needs.analyze.outputs.commit_short }}" \
               --label "author=${{ needs.analyze.outputs.commit_author }}" \
