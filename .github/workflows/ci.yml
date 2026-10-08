@@ -17,13 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/itsapk/amaron-brute-drawing-portal
+  IMAGE_NAME: ghcr.io/itsapk/brute-drawing-portal
   CONTAINER_NAME: drawing-portal
   DATA_VOLUME: drawing-portal-data      # holds the database, uploaded drawings and the generated JWT secret - survives redeploys
   SERVER_PORT: 3250                     # port on the server (point your reverse proxy / domain here)
   CONTAINER_PORT: 8080                  # port the Dockerfile listens on
-  SITE_URL: https://drawing.niranthra.online
-  APPLICATION: Amaron Brute Drawing Portal
+  SITE_URL: https://brute-drawing.niranthra.online
+  APPLICATION:  Brute Drawing Portal
 
 jobs:
 
