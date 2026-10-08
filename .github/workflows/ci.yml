@@ -1,0 +1,547 @@
+name: Build & Deploy Drawing Portal
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Manual trigger reason'
+        required: false
+        default: 'Manual deployment'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: ghcr.io/itsapk/brute-drawing-portal
+  CONTAINER_NAME: drawing-portal
+  DATA_VOLUME: drawing-portal-data      # holds the database, uploaded drawings and the generated JWT secret - survives redeploys
+  SERVER_PORT: 3250                     # port on the server (point your reverse proxy / domain here)
+  CONTAINER_PORT: 8080                  # port the Dockerfile listens on
+  SITE_URL: https://brute-drawing.niranthra.online
+  APPLICATION: Brute Drawing Portal
+
+jobs:
+
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    outputs:
+      commit_sha:          ${{ steps.info.outputs.sha }}
+      commit_short:        ${{ steps.info.outputs.short_sha }}
+      commit_message:      ${{ steps.info.outputs.message }}
+      commit_author:       ${{ steps.info.outputs.author }}
+      commit_author_email: ${{ steps.info.outputs.email }}
+      commit_timestamp:    ${{ steps.info.outputs.timestamp }}
+      files_changed:       ${{ steps.info.outputs.files_changed }}
+      lines_added:         ${{ steps.info.outputs.lines_added }}
+      lines_removed:       ${{ steps.info.outputs.lines_removed }}
+      branch:              ${{ steps.info.outputs.branch }}
+      run_number:          ${{ steps.info.outputs.run_number }}
+      start_epoch:         ${{ steps.info.outputs.epoch }}
+      start_time:          ${{ steps.info.outputs.start_time }}
+      total_commits:       ${{ steps.info.outputs.total_commits }}
+      repo_size:           ${{ steps.info.outputs.repo_size }}
+      last_tag:            ${{ steps.info.outputs.last_tag }}
+      trigger:             ${{ steps.info.outputs.trigger }}
+      changed_files_list:  ${{ steps.changed_files.outputs.list }}
+      top_contributors:    ${{ steps.contributors.outputs.top }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gather commit & repo info
+        id: info
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+          echo "email=$(git log -1 --pretty=%ae)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          echo "run_number=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+          echo "epoch=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "start_time=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+          echo "files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "lines_added=$(git diff HEAD~1 HEAD --numstat | awk '{sum += $1} END {print sum+0}')" >> $GITHUB_OUTPUT
+          echo "lines_removed=$(git diff HEAD~1 HEAD --numstat | awk '{sum += $2} END {print sum+0}')" >> $GITHUB_OUTPUT
+          echo "total_commits=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+          echo "repo_size=$(du -sh .git | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo 'no tags')" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "trigger=🖐 Manual — ${{ github.event.inputs.reason }}" >> $GITHUB_OUTPUT
+          else
+            echo "trigger=🤖 Auto — push to \`${{ github.ref_name }}\`" >> $GITHUB_OUTPUT
+          fi
+
+      - name: List changed files
+        id: changed_files
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD | head -15 | sed 's/^/  📄 /')
+          TOTAL=$(git diff --name-only HEAD~1 HEAD | wc -l | tr -d ' ')
+          if [ "$TOTAL" -gt 15 ]; then
+            FILES="${FILES}"$'\n'"  _(and $((TOTAL - 15)) more...)_"
+          fi
+          echo "list<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get contributor stats
+        id: contributors
+        run: |
+          TOP=$(git shortlog -sn HEAD | head -3 | awk '{print "  👤 " $2, $3, "(" $1 " commits)"}')
+          echo "top<<EOF" >> $GITHUB_OUTPUT
+          echo "$TOP" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Telegram — Pipeline Started
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+
+            🚦 *Pipeline #${{ steps.info.outputs.run_number }} Kicked Off*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+
+            📦 *Repo:* `${{ github.repository }}`
+            🌿 *Branch:* `${{ steps.info.outputs.branch }}`
+            🏷 *Last Tag:* `${{ steps.info.outputs.last_tag }}`
+            🔢 *Total Commits:* ${{ steps.info.outputs.total_commits }}
+            💾 *Repo Size:* ${{ steps.info.outputs.repo_size }}
+            ⚡ *Trigger:* ${{ steps.info.outputs.trigger }}
+
+            🔖 *Commit:* `${{ steps.info.outputs.short_sha }}`
+            💬 *Message:* _${{ steps.info.outputs.message }}_
+            👤 *Author:* ${{ steps.info.outputs.author }} \(${{ steps.info.outputs.email }}\)
+            🕐 *Committed At:* ${{ steps.info.outputs.timestamp }}
+            🕐 *Pipeline Started:* ${{ steps.info.outputs.start_time }}
+
+            📊 *Diff Stats*
+            📝 Files: *${{ steps.info.outputs.files_changed }}* changed
+            ➕ Added: *${{ steps.info.outputs.lines_added }}* lines
+            ➖ Removed: *${{ steps.info.outputs.lines_removed }}* lines
+
+            📁 *Changed Files*
+            ${{ steps.changed_files.outputs.list }}
+
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🔗 [Commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.info.outputs.sha }}) \| [Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+
+  build-and-push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: analyze
+    outputs:
+      build_duration:   ${{ steps.duration.outputs.formatted }}
+      build_start_time: ${{ steps.build_start.outputs.time }}
+      build_end_time:   ${{ steps.finish_time.outputs.now }}
+      image_digest:     ${{ steps.build.outputs.digest }}
+      cache_hit:        ${{ steps.cache_check.outputs.hit }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Record build start
+        id: build_start
+        run: |
+          echo "epoch=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "time=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Telegram — Build Started
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+
+            🐳 *Docker Build Started*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            📦 *Image:* `${{ env.IMAGE_NAME }}:latest`
+            🔖 *Commit:* `${{ needs.analyze.outputs.commit_short }}`
+            💬 *Message:* _${{ needs.analyze.outputs.commit_message }}_
+            ✍️ *Author:* ${{ needs.analyze.outputs.commit_author }}
+            🏃 *Runner:* `ubuntu-latest`
+            🕐 *Started:* ${{ steps.build_start.outputs.time }}
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            ⏳ _Building image\.\.\._
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: itsapk
+          password: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Check GHA cache
+        id: cache_check
+        run: |
+          if docker buildx imagetools inspect ${{ env.IMAGE_NAME }}:latest > /dev/null 2>&1; then
+            echo "hit=♻️ Cache available" >> $GITHUB_OUTPUT
+          else
+            echo "hit=🆕 Fresh build — no cache" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.revision=${{ needs.analyze.outputs.commit_sha }}
+            org.opencontainers.image.created=${{ needs.analyze.outputs.commit_timestamp }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.title=Amaron Brute Drawing Portal
+            org.opencontainers.image.description=Amaron Brute Drawing Portal
+
+      - name: Capture finish time
+        if: always()
+        id: finish_time
+        run: echo "now=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Calculate build duration
+        if: always()
+        id: duration
+        run: |
+          END=$(date +%s)
+          DIFF=$((END - ${{ steps.build_start.outputs.epoch }}))
+          MINS=$((DIFF / 60))
+          SECS=$((DIFF % 60))
+          echo "formatted=${MINS}m ${SECS}s" >> $GITHUB_OUTPUT
+
+      - name: Telegram — Build Success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+
+            ✅ *Docker Build Successful*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            📦 *Image:* `${{ env.IMAGE_NAME }}:latest`
+            🔐 *Digest:* `${{ steps.build.outputs.digest }}`
+            🔖 *Commit:* `${{ needs.analyze.outputs.commit_short }}`
+            💬 *Message:* _${{ needs.analyze.outputs.commit_message }}_
+            ✍️ *Author:* ${{ needs.analyze.outputs.commit_author }}
+            ♻️ *Cache:* ${{ steps.cache_check.outputs.hit }}
+            🕐 *Started:* ${{ steps.build_start.outputs.time }}
+            🕐 *Finished:* ${{ steps.finish_time.outputs.now }}
+            ⏱ *Duration:* ${{ steps.duration.outputs.formatted }}
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🚀 _Triggering deployment..._
+
+      - name: Telegram — Build Failed
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            ❌ *Docker Build FAILED*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            📦 *Repo:* `${{ github.repository }}`
+            🔖 *Commit:* `${{ needs.analyze.outputs.commit_short }}`
+            💬 *Message:* _${{ needs.analyze.outputs.commit_message }}_
+            ✍️ *Author:* ${{ needs.analyze.outputs.commit_author }}
+            🕐 *Started:* ${{ steps.build_start.outputs.time }}
+            🕐 *Failed At:* ${{ steps.finish_time.outputs.now }}
+            ⏱ *Failed After:* ${{ steps.duration.outputs.formatted }}
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🔗 [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            ⛔ _Deployment cancelled._
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [analyze, build-and-push]
+
+    steps:
+      - name: Record deploy start
+        id: deploy_start
+        run: |
+          echo "epoch=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "time=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Fetch pre-deploy server health
+        id: pre_health
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            echo "===== PRE-DEPLOY SERVER HEALTH ====="
+            echo "🕐 Snapshot At : $(date '+%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "── System ──────────────────────────"
+            echo "Disk       : $(df -h / | awk 'NR==2{print $3 "/" $2 " (" $5 " used)"}')"
+            echo "RAM        : $(free -h | awk '/^Mem:/{print $3 "/" $2 " (" int($3/$2*100) "% used)"}')"
+            echo "Swap       : $(free -h | awk '/^Swap:/{print $3 "/" $2}')"
+            echo "CPU Load   : $(uptime | awk -F'load average:' '{print $2}')"
+            echo "Uptime     : $(uptime -p)"
+            echo "Kernel     : $(uname -r)"
+            echo "Docker     : $(docker --version | awk '{print $3}' | tr -d ',')"
+            echo ""
+            echo "── Docker ──────────────────────────"
+            echo "Running    : $(docker ps -q | wc -l) containers"
+            echo "Total      : $(docker ps -aq | wc -l) containers"
+            echo "Images     : $(docker images -q | wc -l)"
+            echo "Volumes    : $(docker volume ls -q | wc -l)"
+            echo ""
+            echo "── Current Drawing Portal container ─────────"
+            if docker ps --filter name=${{ env.CONTAINER_NAME }} --format '{{.Names}}' | grep -q ${{ env.CONTAINER_NAME }}; then
+              docker stats ${{ env.CONTAINER_NAME }} --no-stream \
+                --format "CPU        : {{.CPUPerc}}\nRAM        : {{.MemUsage}} ({{.MemPerc}})\nNET I/O    : {{.NetIO}}\nBLOCK I/O  : {{.BlockIO}}\nPIDs       : {{.PIDs}}"
+              docker ps --filter name=${{ env.CONTAINER_NAME }} \
+                --format "Status     : {{.Status}}\nUptime     : {{.RunningFor}}"
+            else
+              echo "Status     : ⚠️ Not running"
+            fi
+
+      - name: Telegram — Deploy Started
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🚀 *Deployment Started*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🖥 *Server:* `${{ secrets.SERVER_IP }}`
+            🔖 *Commit:* `${{ needs.analyze.outputs.commit_short }}`
+            💬 *Message:* _${{ needs.analyze.outputs.commit_message }}_
+            🐳 *Image:* `${{ env.IMAGE_NAME }}:latest`
+            🔐 *Digest:* `${{ needs.build-and-push.outputs.image_digest }}`
+            🕐 *Started:* ${{ steps.deploy_start.outputs.time }}
+
+            ⏳ _Deploying now..._
+
+      - name: SSH & Deploy
+        id: ssh_deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            set -e
+
+            echo "🔑 Logging into GHCR..."
+            echo "${{ secrets.ACCESS_TOKEN }}" | docker login ghcr.io -u itsapk --password-stdin
+
+            echo "📥 Pulling latest image..."
+            docker pull ${{ env.IMAGE_NAME }}:latest
+
+            echo "🛑 Stopping old container..."
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+
+            echo "🚀 Starting new container..."
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              -p ${{ env.SERVER_PORT }}:${{ env.CONTAINER_PORT }} \
+              --restart unless-stopped \
+              -v ${{ env.DATA_VOLUME }}:/app/App_Data \
+              -e Portal__PublicBaseUrl="${{ env.SITE_URL }}" \
+              -e Portal__TrustForwardedHeaders=true \
+              -e Auth__TestAdmin__Enabled="${{ vars.TEST_ADMIN_ENABLED || 'true' }}" \
+              -e Portal__SeedSampleData="${{ vars.SEED_SAMPLE_DATA || 'true' }}" \
+              -e Email__Mode="${{ vars.EMAIL_MODE || 'File' }}" \
+              -e Email__Smtp__Password="${{ secrets.SMTP_PASSWORD }}" \
+              -e Jwt__Secret="${{ secrets.JWT_SECRET }}" \
+              --label "deployed_at=$(date '+%Y-%m-%d %H:%M:%S UTC')" \
+              --label "commit=${{ needs.analyze.outputs.commit_short }}" \
+              --label "author=${{ needs.analyze.outputs.commit_author }}" \
+              --label "run=${{ needs.analyze.outputs.run_number }}" \
+              ${{ env.IMAGE_NAME }}:latest
+
+            echo "⏳ Waiting for container to stabilize..."
+            sleep 6
+
+            echo "✅ Container Status:"
+            docker ps --filter name=${{ env.CONTAINER_NAME }} \
+              --format "Name: {{.Names}} | Status: {{.Status}} | Ports: {{.Ports}}"
+
+            echo "📊 Resource Usage:"
+            docker stats ${{ env.CONTAINER_NAME }} --no-stream \
+              --format "CPU: {{.CPUPerc}} | RAM: {{.MemUsage}} ({{.MemPerc}}) | NET: {{.NetIO}} | BLOCK: {{.BlockIO}} | PIDs: {{.PIDs}}"
+
+            echo "🧹 Pruning dangling images..."
+            docker image prune -f
+
+            echo "✅ Deploy complete."
+
+      - name: Fetch post-deploy server health
+        if: always()
+        id: post_health
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            echo "===== POST-DEPLOY SERVER HEALTH ====="
+            echo "🕐 Snapshot At : $(date '+%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "── System ──────────────────────────"
+            echo "Disk       : $(df -h / | awk 'NR==2{print $3 "/" $2 " (" $5 " used)"}')"
+            echo "RAM        : $(free -h | awk '/^Mem:/{print $3 "/" $2}')"
+            echo "Swap       : $(free -h | awk '/^Swap:/{print $3 "/" $2}')"
+            echo "CPU Load   : $(uptime | awk -F'load average:' '{print $2}')"
+            echo "Uptime     : $(uptime -p)"
+            echo ""
+            echo "── Docker ──────────────────────────"
+            echo "Running    : $(docker ps -q | wc -l) containers"
+            echo "Total      : $(docker ps -aq | wc -l) containers"
+            echo "Images     : $(docker images -q | wc -l)"
+            echo "Volumes    : $(docker volume ls -q | wc -l)"
+            echo ""
+            echo "── Drawing Portal container ─────────────────"
+            if docker ps --filter name=${{ env.CONTAINER_NAME }} --format '{{.Names}}' | grep -q ${{ env.CONTAINER_NAME }}; then
+              docker stats ${{ env.CONTAINER_NAME }} --no-stream \
+                --format "CPU        : {{.CPUPerc}}\nRAM        : {{.MemUsage}} ({{.MemPerc}})\nNET I/O    : {{.NetIO}}\nBLOCK I/O  : {{.BlockIO}}\nPIDs       : {{.PIDs}}"
+              docker ps --filter name=${{ env.CONTAINER_NAME }} \
+                --format "Status     : {{.Status}}\nRunning For: {{.RunningFor}}"
+              echo ""
+              echo "── Last 10 logs ────────────────────"
+              docker logs ${{ env.CONTAINER_NAME }} --tail 10 2>&1 || true
+            else
+              echo "Status     : ❌ Container NOT running — deploy may have failed"
+            fi
+
+      - name: Capture finish time
+        if: always()
+        id: finish_time
+        run: echo "now=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Calculate deploy duration
+        if: always()
+        id: deploy_duration
+        run: |
+          END=$(date +%s)
+          DIFF=$((END - ${{ steps.deploy_start.outputs.epoch }}))
+          MINS=$((DIFF / 60))
+          SECS=$((DIFF % 60))
+          echo "formatted=${MINS}m ${SECS}s" >> $GITHUB_OUTPUT
+
+      - name: Calculate total pipeline duration
+        if: always()
+        id: total_duration
+        run: |
+          END=$(date +%s)
+          DIFF=$((END - ${{ needs.analyze.outputs.start_epoch }}))
+          MINS=$((DIFF / 60))
+          SECS=$((DIFF % 60))
+          echo "formatted=${MINS}m ${SECS}s" >> $GITHUB_OUTPUT
+
+      - name: Telegram — Deploy Success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🎉 *Deployment Successful!*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+
+            📦 *Repo:* `${{ github.repository }}`
+            🌿 *Branch:* `${{ needs.analyze.outputs.branch }}`
+            🔖 *Commit:* `${{ needs.analyze.outputs.commit_short }}`
+            💬 *Message:* _${{ needs.analyze.outputs.commit_message }}_
+            ✍️ *Author:* ${{ needs.analyze.outputs.commit_author }}
+            🏷 *Last Tag:* `${{ needs.analyze.outputs.last_tag }}`
+            🔢 *Total Commits:* ${{ needs.analyze.outputs.total_commits }}
+            ⚡ *Trigger:* ${{ needs.analyze.outputs.trigger }}
+            🏃 *Run \#:* ${{ needs.analyze.outputs.run_number }}
+
+            🐳 *Docker*
+            Image: `${{ env.IMAGE_NAME }}:latest`
+            Digest: `${{ needs.build-and-push.outputs.image_digest }}`
+
+            📊 *Diff Stats*
+            📝 Files: *${{ needs.analyze.outputs.files_changed }}* changed
+            ➕ Added: *${{ needs.analyze.outputs.lines_added }}* lines
+            ➖ Removed: *${{ needs.analyze.outputs.lines_removed }}* lines
+
+            ⏱ *Full Timeline*
+            🔰 Pipeline Started: ${{ needs.analyze.outputs.start_time }}
+            🐳 Build Started:    ${{ needs.build-and-push.outputs.build_start_time }}
+            ✅ Build Finished:   ${{ needs.build-and-push.outputs.build_end_time }}
+            🚀 Deploy Started:   ${{ steps.deploy_start.outputs.time }}
+            🏁 Deploy Finished:  ${{ steps.finish_time.outputs.now }}
+            🔨 Build Duration:   *${{ needs.build-and-push.outputs.build_duration }}*
+            🚀 Deploy Duration:  *${{ steps.deploy_duration.outputs.formatted }}*
+            🏁 Total Pipeline:   *${{ steps.total_duration.outputs.formatted }}*
+
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🌍 [${{ env.SITE_URL }}](${{ env.SITE_URL }})
+            🔗 [Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) \| [Commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ needs.analyze.outputs.commit_sha }})
+
+      - name: Telegram — Deploy Failed
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          
+          message: |
+            📱 *${{ env.APPLICATION }}*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            💥 *Deployment FAILED!*
+            ━━━━━━━━━━━━━━━━━━━━━━━
+
+            📦 *Repo:* `${{ github.repository }}`
+            🌿 *Branch:* `${{ needs.analyze.outputs.branch }}`
+            🔖 *Commit:* `${{ needs.analyze.outputs.commit_short }}`
+            💬 *Message:* _${{ needs.analyze.outputs.commit_message }}_
+            ✍️ *Author:* ${{ needs.analyze.outputs.commit_author }}
+            ⚡ *Trigger:* ${{ needs.analyze.outputs.trigger }}
+            🏃 *Run \#:* ${{ needs.analyze.outputs.run_number }}
+
+            ⏱ *Timeline*
+            🔰 Pipeline Started: ${{ needs.analyze.outputs.start_time }}
+            🚀 Deploy Started:   ${{ steps.deploy_start.outputs.time }}
+            💥 Failed At:        ${{ steps.finish_time.outputs.now }}
+            🚀 Failed After:     *${{ steps.deploy_duration.outputs.formatted }}*
+            🏁 Total Wasted:     *${{ steps.total_duration.outputs.formatted }}*
+
+        
+            ━━━━━━━━━━━━━━━━━━━━━━━
+            🔗 [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            ⚠️ *Manual intervention required\!*
+            🌍 *${{ env.SITE_URL }} may be DOWN — check immediately\!*

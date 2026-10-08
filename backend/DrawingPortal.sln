@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{50F6B954-0E3C-4119-8342-662D6DDE63C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawingPortal.Api", "src\DrawingPortal.Api\DrawingPortal.Api.csproj", "{7EAD861C-FA42-470A-9E85-AFCAF2E32668}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{334BC277-C907-40CA-A635-FA6C07E23B8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawingPortal.Tests", "tests\DrawingPortal.Tests\DrawingPortal.Tests.csproj", "{A347F70B-87CB-4F2D-983B-D6466E82CB61}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7EAD861C-FA42-470A-9E85-AFCAF2E32668}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EAD861C-FA42-470A-9E85-AFCAF2E32668}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EAD861C-FA42-470A-9E85-AFCAF2E32668}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EAD861C-FA42-470A-9E85-AFCAF2E32668}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A347F70B-87CB-4F2D-983B-D6466E82CB61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A347F70B-87CB-4F2D-983B-D6466E82CB61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A347F70B-87CB-4F2D-983B-D6466E82CB61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A347F70B-87CB-4F2D-983B-D6466E82CB61}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7EAD861C-FA42-470A-9E85-AFCAF2E32668} = {50F6B954-0E3C-4119-8342-662D6DDE63C6}
+		{A347F70B-87CB-4F2D-983B-D6466E82CB61} = {334BC277-C907-40CA-A635-FA6C07E23B8C}
+	EndGlobalSection
+EndGlobal

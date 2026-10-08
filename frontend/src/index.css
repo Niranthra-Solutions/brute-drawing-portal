@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: 'Sora Variable', 'Sora', var(--font-sans);
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-panel: var(--panel);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-dark: var(--brand-dark);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+}
+
+/* Amaron Brute palette: orange = Engineering/admin, green = Marketing/user */
+:root {
+  --radius: 0.75rem;
+  --background: #ffffff;
+  --foreground: #171a1e;
+  --card: #ffffff;
+  --card-foreground: #171a1e;
+  --popover: #ffffff;
+  --popover-foreground: #171a1e;
+  --primary: #e06a2c;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f1ec;
+  --secondary-foreground: #171a1e;
+  --muted: #f3f1ec;
+  --muted-foreground: #6e737c;
+  --accent: #f3f1ec;
+  --accent-foreground: #171a1e;
+  --destructive: #d8432f;
+  --border: #e9e6df;
+  --input: #dcd8cd;
+  --ring: #e06a2c;
+  --panel: #fbfaf8;
+  --brand: #e06a2c;
+  --brand-dark: #c05620;
+  --brand-soft: #ffe4d2;
+  --success: #5fa850;
+  --success-soft: #dcf0d8;
+  --warning: #b8811a;
+  --warning-soft: #fbedcb;
+  --danger-soft: #fbdcd6;
+  --info: #4c6fd9;
+  --info-soft: #e6ebfc;
+  --chart-1: #e06a2c;
+  --chart-2: #5fa850;
+  --chart-3: #4c6fd9;
+  --chart-4: #b8811a;
+  --chart-5: #6e737c;
+}
+/* the user (Marketing) role swaps the primary action colour to green */
+.role-user { --primary: #4f9a42; --ring: #4f9a42; --brand: #4f9a42; --brand-dark: #3d7d33; --brand-soft: #dcf0d8; }
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html, body, #root { height: 100%; }
+  body { @apply bg-background text-foreground font-sans antialiased text-[14px]; }
+  h1, h2, h3 { font-family: var(--font-heading); }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
+}
+
+@layer utilities {
+  .blueprint { background-image: linear-gradient(rgba(224,106,44,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(224,106,44,.035) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(180deg,#000,transparent 420px); }
+  .corners { position: relative; }
+  .corners::before, .corners::after { content: ''; position: absolute; width: 16px; height: 16px; border: 2px solid var(--brand); opacity: .55; pointer-events: none; z-index: 2; }
+  .corners::before { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+  .corners::after { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

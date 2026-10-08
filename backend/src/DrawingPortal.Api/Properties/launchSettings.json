@@ -1,0 +1,6 @@
+{
+  "profiles": {
+    "Api (SQL Server)": { "commandName": "Project", "applicationUrl": "http://localhost:5080", "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "Development" } },
+    "Api (SQLite trial)": { "commandName": "Project", "applicationUrl": "http://localhost:5080", "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "Trial" } }
+  }
+}
