@@ -23,7 +23,7 @@ export default function DrawingsAdminPage() {
   const sort = (field: string) => set('drawings', { sort: field, dir: f.sort === field && f.dir === 'asc' ? 'desc' : 'asc' })
   const filtered = !!(f.q || f.categoryId || f.makeId || f.voltageV || f.status)
   const columns: ColumnDef<Drawing>[] = [
-    { header: 'ID', cell: ({ row: { original: d } }) => <button type="button" title="Click to copy" className="font-mono text-[11px] text-muted-foreground hover:text-foreground" onClick={e => { e.stopPropagation(); void navigator.clipboard?.writeText(d.id); notify.ok('ID copied') }}>{d.id}</button> },
+    { header: 'ID', cell: ({ row: { original: d } }) => <button type="button" title="Click to copy" className="font-mono text-[11px] text-muted-foreground hover:text-foreground" onClick={e => { e.stopPropagation(); void navigator.clipboard?.writeText(d.id); notify.ok('ID copied') }}>{d.id.replace("drw_", "").toUpperCase()}</button> },
     { header: 'Drawing no.', meta: { sort: 'number' }, cell: ({ row: { original: d } }) => <><DrawingNo>{d.drawingNumber}</DrawingNo><div className="text-xs text-muted-foreground">Rev {d.revisionLabel}</div></> },
     { header: 'Category', cell: ({ row }) => row.original.category },
     { header: 'Make', meta: { sort: 'make' }, cell: ({ row }) => row.original.make },
