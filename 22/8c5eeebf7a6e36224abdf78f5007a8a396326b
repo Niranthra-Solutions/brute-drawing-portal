@@ -1,0 +1,16 @@
+backend/src/DrawingPortal.Api/.config/dotnet-tools.json
+  h_51a00495fb6020 1-13
+frontend/src/pages/admin/drawings.tsx
+  h_51a00495fb6020 50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "228c5eeebf7a6e36224abdf78f5007a8a396326b",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
