@@ -23,7 +23,7 @@ const TABS: { id: Tab; label: string; one: string }[] = [
   { id: 'models', label: 'Models & capacity', one: 'model' }, { id: 'connectors', label: 'Connectors', one: 'connector' }, { id: 'voltages', label: 'Voltages', one: 'voltage' }, { id: 'ah-ratings', label: 'Ah ratings', one: 'Ah rating' },
 ]
 const path = (t: Tab) => (['models', 'voltages', 'ah-ratings'].includes(t) ? `/api/master/${t}` : `/api/master/named/${t}`)
-const idCell = (id: string) => <button type="button" title="Click to copy" className="font-mono text-[11px] text-muted-foreground hover:text-foreground" onClick={() => { void navigator.clipboard?.writeText(id); notify.ok('ID copied') }}>{id}</button>
+const idCell = (id: string) => <button type="button" title="Click to copy" className="font-mono text-[11px] text-muted-foreground hover:text-foreground" onClick={() => { void navigator.clipboard?.writeText(id); notify.ok('ID copied') }}>{id.replace("_", "-").toUpperCase()}</button>
 const active = (a: boolean) => <Pill tone={a ? 'green' : 'grey'}>{a ? 'Active' : 'Inactive'}</Pill>
 
 export default function MasterDataPage() {
