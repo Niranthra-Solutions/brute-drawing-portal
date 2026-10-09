@@ -21,6 +21,7 @@ const BulkImport = lazy(() => import("@/pages/admin/bulk-import"));
 const MasterData = lazy(() => import("@/pages/admin/master-data"));
 const Users = lazy(() => import("@/pages/admin/users"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
+const DrawingFiles = lazy(() => import("@/pages/admin/drawing-files"));
 const Audit = lazy(() => import("@/pages/admin/audit"));
 
 const A = ({ children }: { children: React.ReactNode }) => (
@@ -112,6 +113,14 @@ export default function App() {
             element={
               <A>
                 <Settings />
+              </A>
+            }
+          />
+          <Route
+            path="admin/files"
+            element={
+              <A>
+                <DrawingFiles />
               </A>
             }
           />

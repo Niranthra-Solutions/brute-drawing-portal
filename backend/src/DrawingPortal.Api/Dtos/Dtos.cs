@@ -128,6 +128,7 @@ public sealed class SearchQueryDto
 }
 
 // ---------- Files / documents ----------
+public sealed record DrawingFileListItemDto(string Id, string Name, string Extension, long SizeBytes, string ContentType, string Url, string AbsoluteUrl, DateTime UploadedAtUtc, string? UploadedByName, int UsedByCount, IReadOnlyList<string> DrawingNumbers);
 public sealed record UploadedFileDto(string Id, string Name, long SizeBytes, string ContentType, string Url, string AbsoluteUrl, string Sha256);
 public sealed record DocumentDto(string Id, string Title, string Category, string? Description, string FileId, string FileName, string Extension, long SizeBytes, DateTime CreatedAtUtc, bool CanPreview);
 public sealed class SaveDocumentDto

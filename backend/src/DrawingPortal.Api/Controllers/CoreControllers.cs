@@ -69,6 +69,32 @@ public sealed class FilesController(IFileStorage storage, AppDbContext db, ICurr
     }
     private static IFormFile Single(IFormFile? file) => file ?? throw ApiException.BadRequest("Choose a file to upload.", "file");
 
+    /// <summary>Admin library of every uploaded drawing file, with its ready-to-paste URL and where it is used.</summary>
+    [HttpGet("drawings"), Authorize(Policies.Admin)]
+    public async Task<PagedResult<DrawingFileListItemDto>> ListDrawingFiles([FromQuery] string? q, [FromQuery] bool unusedOnly, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken ct = default)
+    {
+        page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 5, 200);
+        var query = db.Files.AsNoTracking().Where(f => f.Kind == FileKind.Drawing);
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var t = q.Trim().ToLower();
+            query = query.Where(f => f.OriginalName.ToLower().Contains(t) || f.Id.ToLower().Contains(t)
+                || db.Revisions.Any(r => r.FileId == f.Id && r.Drawing != null && r.DrawingNumber.ToLower().Contains(t)));
+        }
+        if (unusedOnly) query = query.Where(f => !db.Revisions.Any(r => r.FileId == f.Id && r.Drawing != null));
+        var total = await query.CountAsync(ct);
+        var files = await query.OrderByDescending(f => f.CreatedAtUtc).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        var ids = files.Select(f => f.Id).ToList();
+        var uploaders = files.Select(f => f.UploadedById).Where(x => x != null).Distinct().ToList();
+        var names = await db.Users.AsNoTracking().Where(u => uploaders.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
+        var uses = (await db.Revisions.AsNoTracking().Where(r => r.FileId != null && ids.Contains(r.FileId) && r.Drawing != null)
+            .Select(r => new { r.FileId, r.DrawingNumber }).Distinct().ToListAsync(ct)).GroupBy(x => x.FileId!).ToDictionary(g => g.Key, g => g.Select(x => x.DrawingNumber).OrderBy(x => x).ToList());
+        var baseUrl = string.IsNullOrWhiteSpace(portal.Value.PublicBaseUrl) ? $"{Request.Scheme}://{Request.Host}" : portal.Value.PublicBaseUrl.TrimEnd('/');
+        var items = files.Select(f => { uses.TryGetValue(f.Id, out var u); return new DrawingFileListItemDto(f.Id, f.OriginalName, f.Extension, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.CreatedAtUtc,
+            f.UploadedById != null && names.TryGetValue(f.UploadedById, out var n) ? n : null, u?.Count ?? 0, (u ?? []).Take(5).ToList()); }).ToList();
+        return new PagedResult<DrawingFileListItemDto>(items, total, page, pageSize);
+    }
+
     [HttpPost("drawings"), Authorize(Policies.Admin), EnableRateLimiting("upload"), RequestSizeLimit(60_000_000)]
     public async Task<UploadedFileDto> UploadDrawing(IFormFile? file, CancellationToken ct) => ToDto(await storage.SaveAsync(Single(file), FileKind.Drawing, me.Id, ct));
 
@@ -180,8 +206,7 @@ public sealed class DashboardController(DashboardService svc) : ApiBase
 [Route("api/bulk-import"), Authorize(Policies.Admin)]
 public sealed class BulkImportController(IBulkImportService bulk) : ApiBase
 {
-    [HttpGet("template")]
-    public IActionResult Template() =>
+    [HttpGet("template")] public IActionResult Template() =>
         File(bulk.BuildTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "drawing-import-template.xlsx");
 
     [HttpPost, EnableRateLimiting("upload"), RequestSizeLimit(15_000_000)]

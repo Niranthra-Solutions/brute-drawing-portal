@@ -13,6 +13,7 @@ import {
   Boxes,
   ChevronsLeft,
   Database,
+  Files,
   FolderOpen,
   Hash,
   Inbox,
@@ -52,6 +53,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Logo } from "./logo";
 import { PoweredBy } from "./powered-by";
 import { Spinner } from "./common";
 
@@ -62,7 +64,7 @@ const common = (admin: boolean): { title: string; items: Item[] }[] => [
     items: [
       { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
       { to: "/search", icon: Search, label: "Drawing search" },
-      { to: "/search-by-number", icon: Hash, label: "Search by number" },
+      { to: "/search/number", icon: Hash, label: "Search by number" },
     ],
   },
   {
@@ -92,6 +94,7 @@ const common = (admin: boolean): { title: string; items: Item[] }[] => [
               icon: Upload,
               label: "Upload drawing",
             },
+            { to: "/admin/files", icon: Files, label: "Uploaded files" },
             { to: "/admin/bulk-import", icon: Layers, label: "Bulk import" },
             { to: "/admin/master-data", icon: Boxes, label: "Master data" },
             { to: "/admin/users", icon: Users, label: "Users" },
@@ -182,9 +185,12 @@ function SidebarBody({
           collapsed && "justify-center px-0",
         )}
       >
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground">
+          <Logo size={20} />
+        </div>
         {!collapsed && (
-          <div className="font-heading text-[15px] leading-tight font-bold text-center">
-            Amaron Brute Drawing Portal
+          <div className="font-heading text-[15px] leading-tight font-bold">
+            Drawing Portal
           </div>
         )}
       </div>
@@ -393,7 +399,7 @@ export function Shell() {
   const go = (e: FormEvent) => {
     e.preventDefault();
     if (quick.trim()) {
-      nav(`/search-by-number?number=${encodeURIComponent(quick.trim())}`);
+      nav(`/search/number?number=${encodeURIComponent(quick.trim())}`);
       setQuick("");
     }
   };

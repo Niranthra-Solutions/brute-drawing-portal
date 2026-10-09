@@ -145,6 +145,19 @@ export interface UploadedFile {
   absoluteUrl: string;
   sha256: string;
 }
+export interface DrawingFileItem {
+  id: string;
+  name: string;
+  extension: string;
+  sizeBytes: number;
+  contentType: string;
+  url: string;
+  absoluteUrl: string;
+  uploadedAtUtc: string;
+  uploadedByName: string | null;
+  usedByCount: number;
+  drawingNumbers: string[];
+}
 export interface DocumentItem {
   id: string;
   title: string;
