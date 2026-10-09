@@ -1,0 +1,29 @@
+frontend/src/pages/admin/drawing-files.tsx
+  h_51a00495fb6020 1-54
+  h_51a00495fb6020 55-210
+backend/src/DrawingPortal.Api/Controllers/CoreControllers.cs
+  h_51a00495fb6020 72-97
+  h_51a00495fb6020 209,229
+frontend/src/pages/admin/bulk-import.tsx
+  h_51a00495fb6020 1-17,23,40,57,78,82-87,118,151-152,203-205,220,270-273,276-277,282,284,309-310
+  h_51a00495fb6020 18-22,24-34,36-39,42-56,60-74,76-77,79-81,88-95,97-99,102-115,119-147,149-150,153-180,183-202,206-219,221-232,236-249,251-269,274-275,278-281,283,285-299,304,308,311,313,315-338,341-342
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 131
+frontend/src/App.tsx
+  h_51a00495fb6020 24,119-126
+frontend/src/components/app/shell.tsx
+  h_51a00495fb6020 16,56,67,97,188-190,192-193,402
+frontend/src/lib/types.ts
+  h_51a00495fb6020 148-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "77c5fab41e2c59d270f0c134664a084d4a7bf588",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
