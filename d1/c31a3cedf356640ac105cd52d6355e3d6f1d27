@@ -1,0 +1,14 @@
+frontend/src/components/app/shell.tsx
+  h_51a00495fb6020 66,398
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d1c31a3cedf356640ac105cd52d6355e3d6f1d27",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
