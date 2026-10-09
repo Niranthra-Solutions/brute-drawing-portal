@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { Copy, ExternalLink, Files, Search } from "lucide-react";
+import { Copy, ExternalLink, Eye, Files, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { api } from "@/lib/api";
 import type { DrawingFileItem, Paged } from "@/lib/types";
@@ -9,6 +9,13 @@ import { useDebounced } from "@/lib/hooks";
 import { fmtDateTime, fmtSize } from "@/lib/util";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Advisory,
   Card2,
@@ -31,6 +38,7 @@ const copy = async (text: string, what: string) => {
 };
 
 export default function DrawingFilesPage() {
+  const [view, setView] = useState<DrawingFileItem | null>(null);
   const [f, setF] = useState({ q: "", usage: "", page: 1, pageSize: 25 });
   const q = useDebounced(f.q);
   const list = useQuery({
@@ -88,73 +96,52 @@ export default function DrawingFilesPage() {
       ),
     },
     {
-      header: "Used by drawings",
-      meta: { className: "min-w-[420px]" },
+      header: "Used by",
       cell: ({ row: { original: d } }) =>
         d.usedByCount === 0 ? (
           <Pill tone="amber" dot={false}>
-            Not used by any drawing yet
+            Not used yet
           </Pill>
         ) : (
-          <div className="space-y-1.5">
-            <div className="text-xs font-semibold">
-              {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""} use this
-              file
-            </div>
-            {d.usedBy.map((u) => (
-              <div
-                key={u.drawingId + u.revisionNo}
-                className="rounded-lg border bg-panel px-2.5 py-1.5 text-xs leading-5"
-              >
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <Link
-                    to={`/drawings/${u.drawingId}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="font-mono text-[12px] font-semibold text-brand hover:underline"
-                  >
-                    {u.drawingNumber}
-                  </Link>
-                  <Pill
-                    dot={false}
-                    tone={u.status === "Active" ? "green" : "grey"}
-                  >
-                    {u.status}
-                  </Pill>
-                  {u.isCurrentFile ? (
-                    <Pill dot={false} tone="blue">
-                      Current file · Rev {u.currentRevisionNo}
-                    </Pill>
-                  ) : (
-                    <Pill dot={false}>Old revision {u.revisionNo}</Pill>
-                  )}
-                </div>
-                <div className="text-muted-foreground">
-                  {u.category} › {u.make} › {u.vehicleType} › {u.model} (
-                  {u.capacity})
-                </div>
-                <div className="text-muted-foreground">
-                  {u.voltageV} V · {u.ah} Ah · {u.connector} · {u.size}
-                </div>
-              </div>
-            ))}
-            {d.usedByCount > new Set(d.usedBy.map((u) => u.drawingId)).size && (
-              <div className="text-xs text-muted-foreground">
-                …and{" "}
-                {d.usedByCount - new Set(d.usedBy.map((u) => u.drawingId)).size}{" "}
-                more
-              </div>
-            )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {d.usedBy
+              .filter(
+                (u, i, a) =>
+                  a.findIndex((x) => x.drawingId === u.drawingId) === i,
+              )
+              .slice(0, 2)
+              .map((u) => (
+                <span
+                  key={u.drawingId}
+                  className="rounded-md border bg-panel px-1.5 py-0.5 font-mono text-[11px]"
+                >
+                  {u.drawingNumber}
+                </span>
+              ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2.5 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                setView(d);
+              }}
+            >
+              <Eye />
+              {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""} · View
+            </Button>
           </div>
         ),
     },
     {
-      header: "URL",
+      header: "URL for bulk Excel",
       cell: ({ row: { original: d } }) => (
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             title="Click to copy"
-            className="max-w-[260px] truncate rounded-md border bg-panel px-2 py-1 text-left font-mono text-[11px] hover:border-brand"
+            className="max-w-[200px] truncate rounded-md border bg-panel px-2 py-1 text-left font-mono text-[11px] hover:border-brand"
             onClick={(e) => {
               e.stopPropagation();
               void copy(d.absoluteUrl, "URL");
@@ -238,6 +225,7 @@ export default function DrawingFilesPage() {
             data={list.data?.items ?? []}
             loading={list.isLoading}
             rowKey={(d) => d.id}
+            onRowClick={(d) => d.usedByCount > 0 && setView(d)}
             page={f.page}
             pageSize={f.pageSize}
             total={list.data?.total ?? 0}
@@ -247,6 +235,136 @@ export default function DrawingFilesPage() {
           />
         )}
       </Card2>
+      {view && <UsageDialog file={view} onClose={() => setView(null)} />}
     </>
+  );
+}
+
+function UsageDialog({
+  file,
+  onClose,
+}: {
+  file: DrawingFileItem;
+  onClose: () => void;
+}) {
+  const ids = new Set(file.usedBy.map((u) => u.drawingId));
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[88vh] gap-0 overflow-hidden p-0 sm:max-w-6xl">
+        <DialogHeader className="border-b px-6 py-5 text-left">
+          <DialogTitle className="pr-8 break-all">{file.name}</DialogTitle>
+          <DialogDescription>
+            Used by {ids.size} drawing{ids.size > 1 ? "s" : ""} ·{" "}
+            {fmtSize(file.sizeBytes)} · uploaded{" "}
+            {fmtDateTime(file.uploadedAtUtc)}
+            {file.uploadedByName ? ` by ${file.uploadedByName}` : ""}
+          </DialogDescription>
+          <div className="mt-3 flex gap-2">
+            <Input
+              readOnly
+              value={file.absoluteUrl}
+              aria-label="File URL"
+              className="h-9 font-mono text-xs"
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void copy(file.absoluteUrl, "URL")}
+            >
+              <Copy />
+              Copy URL
+            </Button>
+          </div>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-panel text-left text-[11px] tracking-wide text-muted-foreground uppercase">
+              <tr>
+                {[
+                  "Drawing no.",
+                  "Status",
+                  "File version",
+                  "Make · Category",
+                  "Vehicle type · Model",
+                  "Voltage · Ah",
+                  "Connector",
+                  "L × W × H (mm)",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-3 py-2.5 font-semibold whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {file.usedBy.map((u) => (
+                <tr key={u.drawingId + u.revisionNo} className="align-top">
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <Link
+                      to={`/drawings/${u.drawingId}`}
+                      className="font-mono font-semibold text-brand hover:underline"
+                    >
+                      {u.drawingNumber}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <Pill
+                      dot={false}
+                      tone={u.status === "Active" ? "green" : "grey"}
+                    >
+                      {u.status}
+                    </Pill>
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {u.isCurrentFile ? (
+                      <Pill dot={false} tone="blue">
+                        Current · Rev {u.currentRevisionNo}
+                      </Pill>
+                    ) : (
+                      <Pill dot={false}>Old · Rev {u.revisionNo}</Pill>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="font-medium">{u.make}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {u.category}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="font-medium">
+                      {u.model}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        ({u.capacity})
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {u.vehicleType}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {u.voltageV} V · {u.ah}
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {u.connector}
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap tabular-nums">
+                    {u.size.replace(" mm", "")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {file.usedByCount > ids.size && (
+            <div className="border-t px-4 py-2.5 text-xs text-muted-foreground">
+              Showing the first {ids.size} of {file.usedByCount} drawings.
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

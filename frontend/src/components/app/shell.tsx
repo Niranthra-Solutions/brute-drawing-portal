@@ -53,7 +53,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Logo } from "./logo";
 import { PoweredBy } from "./powered-by";
 import { Spinner } from "./common";
 
@@ -185,7 +184,6 @@ function SidebarBody({
           collapsed && "justify-center px-0",
         )}
       >
-       
         {!collapsed && (
           <div className="font-heading text-[15px] leading-tight font-bold uppercase tracking-wide text-foreground">
             Amaron Brute Drawing Portal
