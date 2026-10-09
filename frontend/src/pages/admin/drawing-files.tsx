@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { Copy, ExternalLink, Eye, Files, Search } from "lucide-react";
+import { Copy, ExternalLink, Files, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { api } from "@/lib/api";
 import type { DrawingFileItem, Paged } from "@/lib/types";
@@ -125,10 +125,9 @@ export default function DrawingFilesPage() {
         ),
     },
     {
-      header: "",
-      cell: ({ row: { original: d } }) => (
-        <div className="flex items-center gap-1.5">
-          <button
+      header: "URL",
+      cell: ({ row: { original: d } }) =>
+         <button
             type="button"
             title="Click to copy"
             className="max-w-[200px] truncate rounded-md border bg-panel px-2 py-1 text-left font-mono text-[11px] hover:border-brand"
@@ -139,6 +138,13 @@ export default function DrawingFilesPage() {
           >
             {d.absoluteUrl}
           </button>
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row: { original: d } }) => (
+        <div className="flex items-center gap-1.5">
+         
           <Button
             type="button"
             size="icon"
