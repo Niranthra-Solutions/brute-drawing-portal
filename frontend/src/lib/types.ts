@@ -144,6 +144,8 @@ export interface UploadedFile {
   url: string;
   absoluteUrl: string;
   sha256: string;
+  alreadyExisted?: boolean;
+  firstUploadedAtUtc?: string | null;
 }
 export interface DrawingFileItem {
   id: string;

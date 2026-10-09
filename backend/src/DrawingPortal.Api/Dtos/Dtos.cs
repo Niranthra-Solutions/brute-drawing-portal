@@ -43,9 +43,7 @@ public sealed class SaveAhDto { [Range(1, 100000)] public int Value { get; set; 
 public sealed class SaveSettingsDto
 {
     [Required, StringLength(40)] public string NumberMask { get; set; } = "";
-    public int ToleranceLengthMm { get; set; }
-    public int ToleranceWidthMm { get; set; }
-    public int ToleranceHeightMm { get; set; }
+    public int ToleranceLengthMm { get; set; } public int ToleranceWidthMm { get; set; } public int ToleranceHeightMm { get; set; }
 }
 public sealed record SettingsDto(string NumberMask, string Example, int ToleranceLengthMm, int ToleranceWidthMm, int ToleranceHeightMm);
 
@@ -112,11 +110,8 @@ public sealed class AddRevisionDto
 }
 public sealed class DrawingListQuery
 {
-    public string? Q { get; set; }
-    public string? CategoryId { get; set; }
-    public string? MakeId { get; set; }
-    public int? VoltageV { get; set; }
-    public DrawingStatus? Status { get; set; }
+    public string? Q { get; set; } public string? CategoryId { get; set; } public string? MakeId { get; set; }
+    public int? VoltageV { get; set; } public DrawingStatus? Status { get; set; }
     public string Sort { get; set; } = "updated"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
 }
@@ -135,7 +130,7 @@ public sealed class SearchQueryDto
 // ---------- Files / documents ----------
 public sealed record FileUsageDto(string DrawingId, string DrawingNumber, string Category, string Make, string VehicleType, string Model, string Capacity, int VoltageV, string Ah, string Connector, string Size, string Status, int RevisionNo, int CurrentRevisionNo, bool IsCurrentFile);
 public sealed record DrawingFileListItemDto(string Id, string Name, string Extension, long SizeBytes, string ContentType, string Url, string AbsoluteUrl, DateTime UploadedAtUtc, string? UploadedByName, int UsedByCount, IReadOnlyList<FileUsageDto> UsedBy);
-public sealed record UploadedFileDto(string Id, string Name, long SizeBytes, string ContentType, string Url, string AbsoluteUrl, string Sha256);
+public sealed record UploadedFileDto(string Id, string Name, long SizeBytes, string ContentType, string Url, string AbsoluteUrl, string Sha256, bool AlreadyExisted = false, DateTime? FirstUploadedAtUtc = null);
 public sealed record DocumentDto(string Id, string Title, string Category, string? Description, string FileId, string FileName, string Extension, long SizeBytes, DateTime CreatedAtUtc, bool CanPreview);
 public sealed class SaveDocumentDto
 {
@@ -171,11 +166,8 @@ public sealed class CreateRequestDto
 }
 public sealed class RequestListQuery
 {
-    public RequestType? Type { get; set; }
-    public RequestStatus? Status { get; set; }
-    public RequestPriority? Priority { get; set; }
-    public string? Q { get; set; }
-    public string Sort { get; set; } = "submitted"; public string Dir { get; set; } = "desc";
+    public RequestType? Type { get; set; } public RequestStatus? Status { get; set; } public RequestPriority? Priority { get; set; }
+    public string? Q { get; set; } public string Sort { get; set; } = "submitted"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
 }
 public sealed record RequestListItemDto(string Id, string TicketNo, string Type, string Status, string Priority, string Title, string RequestedByName, string RequestedByEmail,

@@ -67,7 +67,7 @@ public sealed class FilesController(IFileStorage storage, AppDbContext db, ICurr
     private UploadedFileDto ToDto(StoredFile f)
     {
         var baseUrl = string.IsNullOrWhiteSpace(portal.Value.PublicBaseUrl) ? $"{Request.Scheme}://{Request.Host}" : portal.Value.PublicBaseUrl.TrimEnd('/');
-        return new UploadedFileDto(f.Id, f.OriginalName, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.Sha256);
+        return new UploadedFileDto(f.Id, f.OriginalName, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.Sha256, f.WasExisting, f.WasExisting ? f.CreatedAtUtc : null);
     }
     private static IFormFile Single(IFormFile? file) => file ?? throw ApiException.BadRequest("Choose a file to upload.", "file");
 
@@ -97,11 +97,8 @@ public sealed class FilesController(IFileStorage storage, AppDbContext db, ICurr
             DrawingMapper.AhLabel(x.Ah, x.Std), x.Conn, $"{x.L} × {x.W} × {x.H} mm", x.Status, x.RevNo, x.CurRev, x.IsCurrent)).ToList());
         var counts = rows.GroupBy(x => x.FileId).ToDictionary(g => g.Key, g => g.Select(x => x.DrawingId).Distinct().Count());
         var baseUrl = string.IsNullOrWhiteSpace(portal.Value.PublicBaseUrl) ? $"{Request.Scheme}://{Request.Host}" : portal.Value.PublicBaseUrl.TrimEnd('/');
-        var items = files.Select(f =>
-        {
-            uses.TryGetValue(f.Id, out var u); return new DrawingFileListItemDto(f.Id, f.OriginalName, f.Extension, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.CreatedAtUtc,
-            f.UploadedById != null && names.TryGetValue(f.UploadedById, out var n) ? n : null, counts.GetValueOrDefault(f.Id), u ?? []);
-        }).ToList();
+        var items = files.Select(f => { uses.TryGetValue(f.Id, out var u); return new DrawingFileListItemDto(f.Id, f.OriginalName, f.Extension, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.CreatedAtUtc,
+            f.UploadedById != null && names.TryGetValue(f.UploadedById, out var n) ? n : null, counts.GetValueOrDefault(f.Id), u ?? []); }).ToList();
         return new PagedResult<DrawingFileListItemDto>(items, total, page, pageSize);
     }
 
@@ -216,8 +213,7 @@ public sealed class DashboardController(DashboardService svc) : ApiBase
 [Route("api/bulk-import"), Authorize(Policies.Admin)]
 public sealed class BulkImportController(IBulkImportService bulk) : ApiBase
 {
-    [HttpGet("template")]
-    public IActionResult Template() =>
+    [HttpGet("template")] public IActionResult Template() =>
         File(bulk.BuildTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "drawing-import-template.xlsx");
 
     [HttpPost, EnableRateLimiting("upload"), RequestSizeLimit(15_000_000)]

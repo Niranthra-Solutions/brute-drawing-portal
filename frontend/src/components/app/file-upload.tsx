@@ -3,11 +3,11 @@ import { motion } from "framer-motion";
 import { Check, UploadCloud } from "lucide-react";
 import { upload } from "@/lib/api";
 import type { UploadedFile } from "@/lib/types";
-import { fmtSize } from "@/lib/util";
+import { fmtDateTime, fmtSize } from "@/lib/util";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CopyField, errMsg } from "./common";
+import { CopyField, errMsg, notify } from "./common";
 
 /** Drag-and-drop uploader with real progress. Uploads immediately and returns the stored file (id + generated URL). */
 export function FileUpload({
@@ -38,7 +38,12 @@ export function FileUpload({
     setErr(undefined);
     setPct(0);
     try {
-      onUploaded(await upload<UploadedFile>(endpoint, file, setPct));
+      const up = await upload<UploadedFile>(endpoint, file, setPct);
+      if (up.alreadyExisted)
+        notify.ok(
+          "This file was already uploaded — using the existing link. Nothing new was saved.",
+        );
+      onUploaded(up);
     } catch (e) {
       setErr(errMsg(e));
     } finally {
@@ -89,6 +94,15 @@ export function FileUpload({
             <Check className="size-4 text-success" />
             <span className="font-bold text-foreground">{value.name}</span>
             <span>{fmtSize(value.sizeBytes)}</span>
+            {value.alreadyExisted && (
+              <span className="basis-full text-xs font-semibold text-info">
+                Already uploaded
+                {value.firstUploadedAtUtc
+                  ? ` on ${fmtDateTime(value.firstUploadedAtUtc)}`
+                  : ""}{" "}
+                — existing file and link reused, nothing saved again.
+              </span>
+            )}
             <Button
               type="button"
               size="sm"

@@ -108,6 +108,8 @@ public class StoredFile : Entity
     /// <summary>Relative, host-agnostic URL persisted for reuse (e.g. in bulk Excel files): /api/files/{id}</summary>
     public string Url { get; set; } = "";
     public string? UploadedById { get; set; }
+    /// <summary>Set on the returned object when an upload matched a file already stored (not persisted).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped] public bool WasExisting { get; set; }
 }
 
 public class Drawing : Entity
