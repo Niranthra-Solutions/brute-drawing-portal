@@ -104,32 +104,22 @@ export default function DrawingFilesPage() {
           </Pill>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
-            {d.usedBy
-              .filter(
-                (u, i, a) =>
-                  a.findIndex((x) => x.drawingId === u.drawingId) === i,
-              )
-              .slice(0, 2)
-              .map((u) => (
-                <span
-                  key={u.drawingId}
-                  className="rounded-md border bg-panel px-1.5 py-0.5 font-mono text-[11px]"
-                >
-                  {u.drawingNumber}
-                </span>
-              ))}
+          
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="link"
               className="h-7 px-2.5 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 setView(d);
               }}
             >
-              <Eye />
-              {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""} · View
+           
+              <Pill tone="orange" dot={false}>
+           {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""} 
+          </Pill>
+            
             </Button>
           </div>
         ),
