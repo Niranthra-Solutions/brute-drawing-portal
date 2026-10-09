@@ -39,16 +39,22 @@ public sealed class MasterDataService(AppDbContext db, IAuditService audit, ICac
     // ---------- Named masters (category, type, make, connector) ----------
     public Task<List<NamedItemDto>> ListNamedAsync(string kind, CancellationToken ct) => kind switch
     {
-        "categories" => ListOf(db.Categories, ct), "vehicle-types" => ListOf(db.VehicleTypes, ct),
-        "makes" => ListOf(db.Makes, ct), "connectors" => ListOf(db.Connectors, ct), _ => throw UnknownKind()
+        "categories" => ListOf(db.Categories, ct),
+        "vehicle-types" => ListOf(db.VehicleTypes, ct),
+        "makes" => ListOf(db.Makes, ct),
+        "connectors" => ListOf(db.Connectors, ct),
+        _ => throw UnknownKind()
     };
     private static Task<List<NamedItemDto>> ListOf<T>(DbSet<T> set, CancellationToken ct) where T : NamedMaster =>
         set.AsNoTracking().OrderBy(x => x.SortOrder).ThenBy(x => x.Name).Select(x => new NamedItemDto(x.Id, x.Name, x.SortOrder, x.IsActive)).ToListAsync(ct);
 
     public Task<NamedItemDto> CreateNamedAsync(string kind, SaveNamedDto dto, CancellationToken ct) => kind switch
     {
-        "categories" => CreateOf(db.Categories, kind, dto, ct), "vehicle-types" => CreateOf(db.VehicleTypes, kind, dto, ct),
-        "makes" => CreateOf(db.Makes, kind, dto, ct), "connectors" => CreateOf(db.Connectors, kind, dto, ct), _ => throw UnknownKind()
+        "categories" => CreateOf(db.Categories, kind, dto, ct),
+        "vehicle-types" => CreateOf(db.VehicleTypes, kind, dto, ct),
+        "makes" => CreateOf(db.Makes, kind, dto, ct),
+        "connectors" => CreateOf(db.Connectors, kind, dto, ct),
+        _ => throw UnknownKind()
     };
     private async Task<NamedItemDto> CreateOf<T>(DbSet<T> set, string kind, SaveNamedDto dto, CancellationToken ct) where T : NamedMaster, new()
     {
@@ -63,8 +69,11 @@ public sealed class MasterDataService(AppDbContext db, IAuditService audit, ICac
 
     public Task<NamedItemDto> UpdateNamedAsync(string kind, string id, SaveNamedDto dto, CancellationToken ct) => kind switch
     {
-        "categories" => UpdateOf(db.Categories, kind, id, dto, ct), "vehicle-types" => UpdateOf(db.VehicleTypes, kind, id, dto, ct),
-        "makes" => UpdateOf(db.Makes, kind, id, dto, ct), "connectors" => UpdateOf(db.Connectors, kind, id, dto, ct), _ => throw UnknownKind()
+        "categories" => UpdateOf(db.Categories, kind, id, dto, ct),
+        "vehicle-types" => UpdateOf(db.VehicleTypes, kind, id, dto, ct),
+        "makes" => UpdateOf(db.Makes, kind, id, dto, ct),
+        "connectors" => UpdateOf(db.Connectors, kind, id, dto, ct),
+        _ => throw UnknownKind()
     };
     private async Task<NamedItemDto> UpdateOf<T>(DbSet<T> set, string kind, string id, SaveNamedDto dto, CancellationToken ct) where T : NamedMaster
     {
@@ -90,8 +99,10 @@ public sealed class MasterDataService(AppDbContext db, IAuditService audit, ICac
         if (used > 0) throw ApiException.Conflict($"This value is used by {used} record(s). Deactivate it instead of deleting.");
         object? e = kind switch
         {
-            "categories" => await db.Categories.FindAsync([id], ct), "vehicle-types" => await db.VehicleTypes.FindAsync([id], ct),
-            "makes" => await db.Makes.FindAsync([id], ct), _ => await db.Connectors.FindAsync([id], ct)
+            "categories" => await db.Categories.FindAsync([id], ct),
+            "vehicle-types" => await db.VehicleTypes.FindAsync([id], ct),
+            "makes" => await db.Makes.FindAsync([id], ct),
+            _ => await db.Connectors.FindAsync([id], ct)
         };
         if (e is null) throw ApiException.NotFound();
         db.Remove(e);

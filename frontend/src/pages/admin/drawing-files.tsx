@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Copy, ExternalLink, Files, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -87,21 +88,62 @@ export default function DrawingFilesPage() {
       ),
     },
     {
-      header: "Used by",
+      header: "Used by drawings",
+      meta: { className: "min-w-[420px]" },
       cell: ({ row: { original: d } }) =>
         d.usedByCount === 0 ? (
           <Pill tone="amber" dot={false}>
-            Not used yet
+            Not used by any drawing yet
           </Pill>
         ) : (
-          <div className="text-xs">
-            <span className="font-medium">
-              {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""}
-            </span>
-            <div className="text-muted-foreground">
-              {d.drawingNumbers.join(", ")}
-              {d.usedByCount > d.drawingNumbers.length ? " …" : ""}
+          <div className="space-y-1.5">
+            <div className="text-xs font-semibold">
+              {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""} use this
+              file
             </div>
+            {d.usedBy.map((u) => (
+              <div
+                key={u.drawingId + u.revisionNo}
+                className="rounded-lg border bg-panel px-2.5 py-1.5 text-xs leading-5"
+              >
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <Link
+                    to={`/drawings/${u.drawingId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-mono text-[12px] font-semibold text-brand hover:underline"
+                  >
+                    {u.drawingNumber}
+                  </Link>
+                  <Pill
+                    dot={false}
+                    tone={u.status === "Active" ? "green" : "grey"}
+                  >
+                    {u.status}
+                  </Pill>
+                  {u.isCurrentFile ? (
+                    <Pill dot={false} tone="blue">
+                      Current file · Rev {u.currentRevisionNo}
+                    </Pill>
+                  ) : (
+                    <Pill dot={false}>Old revision {u.revisionNo}</Pill>
+                  )}
+                </div>
+                <div className="text-muted-foreground">
+                  {u.category} › {u.make} › {u.vehicleType} › {u.model} (
+                  {u.capacity})
+                </div>
+                <div className="text-muted-foreground">
+                  {u.voltageV} V · {u.ah} Ah · {u.connector} · {u.size}
+                </div>
+              </div>
+            ))}
+            {d.usedByCount > new Set(d.usedBy.map((u) => u.drawingId)).size && (
+              <div className="text-xs text-muted-foreground">
+                …and{" "}
+                {d.usedByCount - new Set(d.usedBy.map((u) => u.drawingId)).size}{" "}
+                more
+              </div>
+            )}
           </div>
         ),
     },

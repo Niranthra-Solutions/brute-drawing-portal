@@ -203,15 +203,33 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
 
         var d = new Drawing
         {
-            DrawingNumber = DrawingNumberFormat.Normalize(dto.DrawingNumber), ModelId = dto.ModelId, VoltageV = dto.VoltageV, AhValue = dto.AhValue,
-            AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant(), LengthMm = dto.LengthMm, WidthMm = dto.WidthMm, HeightMm = dto.HeightMm,
-            ConnectorTypeId = dto.ConnectorTypeId, Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)),
+            DrawingNumber = DrawingNumberFormat.Normalize(dto.DrawingNumber),
+            ModelId = dto.ModelId,
+            VoltageV = dto.VoltageV,
+            AhValue = dto.AhValue,
+            AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant(),
+            LengthMm = dto.LengthMm,
+            WidthMm = dto.WidthMm,
+            HeightMm = dto.HeightMm,
+            ConnectorTypeId = dto.ConnectorTypeId,
+            Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)),
             CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(dto.CompetitorDrawingNumber, 60)),
-            CurrentRevisionNo = 1, CurrentFileId = file!.Id, CreatedById = user.Id,
+            CurrentRevisionNo = 1,
+            CurrentFileId = file!.Id,
+            CreatedById = user.Id,
         };
         db.Drawings.Add(d);
-        var rev = new DrawingRevision { DrawingId = d.Id, RevisionNo = 1, DrawingNumber = d.DrawingNumber, FileId = file.Id, CreatedById = user.Id, RequestId = dto.RequestId,
-            ChangeNotes = Text.NullIfEmpty(Text.CleanMultiline(dto.ChangeNotes, 2000)) ?? "Initial release", SnapshotJson = Snapshot(d) };
+        var rev = new DrawingRevision
+        {
+            DrawingId = d.Id,
+            RevisionNo = 1,
+            DrawingNumber = d.DrawingNumber,
+            FileId = file.Id,
+            CreatedById = user.Id,
+            RequestId = dto.RequestId,
+            ChangeNotes = Text.NullIfEmpty(Text.CleanMultiline(dto.ChangeNotes, 2000)) ?? "Initial release",
+            SnapshotJson = Snapshot(d)
+        };
         db.Revisions.Add(rev);
         if (!string.IsNullOrEmpty(dto.RequestId)) await workflow.CompleteWithDrawingAsync(dto.RequestId, d, ct);
         audit.Add("DrawingCreated", "Drawing", d.Id, $"Created drawing {d.DrawingNumber}", new { d.DrawingNumber, file = file.Id, dto.RequestId });
@@ -276,8 +294,17 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (dto.AhStandard is not null) d.AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant();
         d.LengthMm = dto.LengthMm ?? d.LengthMm; d.WidthMm = dto.WidthMm ?? d.WidthMm; d.HeightMm = dto.HeightMm ?? d.HeightMm; d.ConnectorTypeId = dto.ConnectorTypeId ?? d.ConnectorTypeId;
         var last = await db.Revisions.Where(r => r.DrawingId == id).Select(r => (int?)r.RevisionNo).MaxAsync(ct) ?? 0;
-        var rev = new DrawingRevision { DrawingId = id, RevisionNo = last + 1, DrawingNumber = d.DrawingNumber, FileId = file!.Id, CreatedById = user.Id, RequestId = dto.RequestId,
-            ChangeNotes = Text.CleanMultiline(dto.ChangeNotes, 2000), SnapshotJson = Snapshot(d) };
+        var rev = new DrawingRevision
+        {
+            DrawingId = id,
+            RevisionNo = last + 1,
+            DrawingNumber = d.DrawingNumber,
+            FileId = file!.Id,
+            CreatedById = user.Id,
+            RequestId = dto.RequestId,
+            ChangeNotes = Text.CleanMultiline(dto.ChangeNotes, 2000),
+            SnapshotJson = Snapshot(d)
+        };
         db.Revisions.Add(rev);
         d.CurrentRevisionNo = rev.RevisionNo; d.CurrentFileId = file.Id; d.UpdatedAtUtc = DateTime.UtcNow; d.Status = DrawingStatus.Active;
         if (!string.IsNullOrEmpty(dto.RequestId)) await workflow.CompleteWithDrawingAsync(dto.RequestId, d, ct);

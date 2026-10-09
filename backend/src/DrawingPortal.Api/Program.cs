@@ -114,9 +114,17 @@ try
         o.MapInboundClaims = false;
         o.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true, ValidIssuer = jwt.Issuer, ValidateAudience = true, ValidAudience = jwt.Audience, ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(30),
-            ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
-            RoleClaimType = "role", NameClaimType = "name", ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
+            RoleClaimType = "role",
+            NameClaimType = "name",
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
         };
         o.Events = new JwtBearerEvents { OnMessageReceived = c => { c.Token = c.Request.Cookies[AuthController.AccessCookie]; return Task.CompletedTask; } };
     });

@@ -156,7 +156,24 @@ export interface DrawingFileItem {
   uploadedAtUtc: string;
   uploadedByName: string | null;
   usedByCount: number;
-  drawingNumbers: string[];
+  usedBy: FileUsage[];
+}
+export interface FileUsage {
+  drawingId: string;
+  drawingNumber: string;
+  category: string;
+  make: string;
+  vehicleType: string;
+  model: string;
+  capacity: string;
+  voltageV: number;
+  ah: string;
+  connector: string;
+  size: string;
+  status: string;
+  revisionNo: number;
+  currentRevisionNo: number;
+  isCurrentFile: boolean;
 }
 export interface DocumentItem {
   id: string;

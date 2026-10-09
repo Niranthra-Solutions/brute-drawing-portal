@@ -59,7 +59,9 @@ public sealed class RequestsController(IRequestService requests) : ApiBase
     [HttpPost("{id}/comments")] public Task<CommentViewDto> AddComment(string id, CommentDto dto, CancellationToken ct) => requests.AddCommentAsync(id, dto.Body, ct);
 }
 
+public sealed record FileUsageRow(string FileId, int RevNo, string DrawingId, string Number, string Cat, string Make, string VType, string Model, string Cap, int Volt, int Ah, string Std, string Conn, int L, int W, int H, string Status, int CurRev, bool IsCurrent);
 [Route("api/files")]
+
 public sealed class FilesController(IFileStorage storage, AppDbContext db, ICurrentUser me, IOptions<PortalOptions> portal) : ApiBase
 {
     private UploadedFileDto ToDto(StoredFile f)
@@ -87,11 +89,19 @@ public sealed class FilesController(IFileStorage storage, AppDbContext db, ICurr
         var ids = files.Select(f => f.Id).ToList();
         var uploaders = files.Select(f => f.UploadedById).Where(x => x != null).Distinct().ToList();
         var names = await db.Users.AsNoTracking().Where(u => uploaders.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
-        var uses = (await db.Revisions.AsNoTracking().Where(r => r.FileId != null && ids.Contains(r.FileId) && r.Drawing != null)
-            .Select(r => new { r.FileId, r.DrawingNumber }).Distinct().ToListAsync(ct)).GroupBy(x => x.FileId!).ToDictionary(g => g.Key, g => g.Select(x => x.DrawingNumber).OrderBy(x => x).ToList());
+        var rows = await db.Revisions.AsNoTracking().Where(r => r.FileId != null && ids.Contains(r.FileId) && r.Drawing != null)
+            .Select(r => new FileUsageRow(r.FileId!, r.RevisionNo, r.DrawingId, r.Drawing!.DrawingNumber, r.Drawing.Model!.Category!.Name, r.Drawing.Model.Make!.Name, r.Drawing.Model.VehicleType!.Name,
+                r.Drawing.Model.ModelName, r.Drawing.Model.Capacity, r.Drawing.VoltageV, r.Drawing.AhValue, r.Drawing.AhStandard, r.Drawing.Connector!.Name,
+                r.Drawing.LengthMm, r.Drawing.WidthMm, r.Drawing.HeightMm, r.Drawing.Status.ToString(), r.Drawing.CurrentRevisionNo, r.Drawing.CurrentFileId == r.FileId)).ToListAsync(ct);
+        var uses = rows.GroupBy(x => x.FileId).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Number).ThenBy(x => x.RevNo).Take(100).Select(x => new FileUsageDto(x.DrawingId, x.Number, x.Cat, x.Make, x.VType, x.Model, x.Cap, x.Volt,
+            DrawingMapper.AhLabel(x.Ah, x.Std), x.Conn, $"{x.L} × {x.W} × {x.H} mm", x.Status, x.RevNo, x.CurRev, x.IsCurrent)).ToList());
+        var counts = rows.GroupBy(x => x.FileId).ToDictionary(g => g.Key, g => g.Select(x => x.DrawingId).Distinct().Count());
         var baseUrl = string.IsNullOrWhiteSpace(portal.Value.PublicBaseUrl) ? $"{Request.Scheme}://{Request.Host}" : portal.Value.PublicBaseUrl.TrimEnd('/');
-        var items = files.Select(f => { uses.TryGetValue(f.Id, out var u); return new DrawingFileListItemDto(f.Id, f.OriginalName, f.Extension, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.CreatedAtUtc,
-            f.UploadedById != null && names.TryGetValue(f.UploadedById, out var n) ? n : null, u?.Count ?? 0, (u ?? []).Take(5).ToList()); }).ToList();
+        var items = files.Select(f =>
+        {
+            uses.TryGetValue(f.Id, out var u); return new DrawingFileListItemDto(f.Id, f.OriginalName, f.Extension, f.SizeBytes, f.ContentType, f.Url, baseUrl + f.Url, f.CreatedAtUtc,
+            f.UploadedById != null && names.TryGetValue(f.UploadedById, out var n) ? n : null, counts.GetValueOrDefault(f.Id), u ?? []);
+        }).ToList();
         return new PagedResult<DrawingFileListItemDto>(items, total, page, pageSize);
     }
 
@@ -206,7 +216,8 @@ public sealed class DashboardController(DashboardService svc) : ApiBase
 [Route("api/bulk-import"), Authorize(Policies.Admin)]
 public sealed class BulkImportController(IBulkImportService bulk) : ApiBase
 {
-    [HttpGet("template")] public IActionResult Template() =>
+    [HttpGet("template")]
+    public IActionResult Template() =>
         File(bulk.BuildTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "drawing-import-template.xlsx");
 
     [HttpPost, EnableRateLimiting("upload"), RequestSizeLimit(15_000_000)]

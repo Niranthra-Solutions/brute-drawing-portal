@@ -117,12 +117,22 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
 
     private static string Canon(string key) => new string(key.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant() switch
     {
-        "drawingno" or "drawingnumber" => "number", "category" or "vehiclecategory" => "cat", "make" or "vehiclemake" or "oem" => "make",
-        "type" or "vehicletype" => "type", "model" or "modelno" or "vehiclemodel" => "model", "capacity" or "vehiclecapacity" => "cap",
-        "voltage" or "voltagev" or "volts" => "volt", "ah" or "ahrating" => "ah", "connector" or "endconnector" or "sockettype" or "connectortype" => "conn",
-        "length" or "lengthmm" or "l" => "len", "width" or "widthmm" or "w" => "wid", "height" or "heightmm" or "h" => "hei",
-        "comments" or "comment" => "comments", "competitordrawingnumber" or "competitordrawingno" => "competitor",
-        "drawingurl" or "url" or "fileurl" or "drawingbucketurl" or "bucketurl" => "url", var other => other
+        "drawingno" or "drawingnumber" => "number",
+        "category" or "vehiclecategory" => "cat",
+        "make" or "vehiclemake" or "oem" => "make",
+        "type" or "vehicletype" => "type",
+        "model" or "modelno" or "vehiclemodel" => "model",
+        "capacity" or "vehiclecapacity" => "cap",
+        "voltage" or "voltagev" or "volts" => "volt",
+        "ah" or "ahrating" => "ah",
+        "connector" or "endconnector" or "sockettype" or "connectortype" => "conn",
+        "length" or "lengthmm" or "l" => "len",
+        "width" or "widthmm" or "w" => "wid",
+        "height" or "heightmm" or "h" => "hei",
+        "comments" or "comment" => "comments",
+        "competitordrawingnumber" or "competitordrawingno" => "competitor",
+        "drawingurl" or "url" or "fileurl" or "drawingbucketurl" or "bucketurl" => "url",
+        var other => other
     };
 
     private static string S(IDictionary<string, string?> d, string k) => d.TryGetValue(k, out var v) ? (v ?? "").Trim() : "";
@@ -242,9 +252,20 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
 
             var d = new Drawing
             {
-                DrawingNumber = num, ModelId = model!.Id, VoltageV = volt, AhValue = ah, AhStandard = std, LengthMm = len, WidthMm = wid, HeightMm = hei, ConnectorTypeId = conn!.Id,
-                Comments = Text.NullIfEmpty(Text.CleanMultiline(S(c, "comments"), 2000)), CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(S(c, "competitor"), 60)),
-                CurrentRevisionNo = 1, CurrentFileId = file.Id, CreatedById = job.RequestedById,
+                DrawingNumber = num,
+                ModelId = model!.Id,
+                VoltageV = volt,
+                AhValue = ah,
+                AhStandard = std,
+                LengthMm = len,
+                WidthMm = wid,
+                HeightMm = hei,
+                ConnectorTypeId = conn!.Id,
+                Comments = Text.NullIfEmpty(Text.CleanMultiline(S(c, "comments"), 2000)),
+                CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(S(c, "competitor"), 60)),
+                CurrentRevisionNo = 1,
+                CurrentFileId = file.Id,
+                CreatedById = job.RequestedById,
             };
             newDrawings.Add(d); seen.Add(num);
             newRevs.Add(new DrawingRevision { DrawingId = d.Id, RevisionNo = 1, DrawingNumber = num, FileId = file.Id, ChangeNotes = "Imported from Excel", CreatedById = job.RequestedById });
@@ -265,7 +286,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             log.LogError(ex, "Bulk batch failed");
             db.ChangeTracker.Clear();
             job.CreatedCount -= created; job.SkippedCount -= skipped;
-            job.ErrorCount += created; 
+            job.ErrorCount += created;
             db.Attach(job).State = EntityState.Modified;
             db.BulkErrors.Add(new BulkImportRowError { JobId = job.Id, RowNumber = rows[0].Row, Message = $"A database error rejected rows {rows[0].Row}-{rows[^1].Row}: {Text.Truncate(ex.GetBaseException().Message, 300)}" });
             await db.SaveChangesAsync(ct);

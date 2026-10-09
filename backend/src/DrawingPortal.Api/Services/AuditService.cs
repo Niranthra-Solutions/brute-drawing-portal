@@ -20,7 +20,9 @@ public sealed class AuditService(AppDbContext db, ICurrentUser user) : IAuditSer
         {
             ActorId = actorId ?? user.Id,
             ActorEmail = Text.Truncate(actorEmail ?? user.Email ?? "system", 254),
-            Action = action, EntityType = entityType, EntityId = entityId,
+            Action = action,
+            EntityType = entityType,
+            EntityId = entityId,
             Summary = Text.Truncate(summary, 500),
             DetailsJson = details is null ? null : JsonSerializer.Serialize(details, Json),
             IpAddress = user.Ip,
