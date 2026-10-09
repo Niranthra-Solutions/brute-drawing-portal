@@ -367,28 +367,23 @@ public class ApiTests(ApiFixture f) : IClassFixture<ApiFixture>
     }
 
     [Fact]
-    public async Task Bulk_import_and_drawing_forms_refuse_to_attach_the_same_drawing_file_twice()
+    public async Task One_drawing_file_can_be_shared_by_several_drawings()
     {
         var admin = await f.LoginAdminAsync(); var b = await Boot(admin);
-        var a = await UploadDrawing(admin, "reuse file a"); var a2 = await UploadDrawing(admin, "reuse file a");   // identical content, uploaded twice
-        var c = await UploadDrawing(admin, "reuse file c"); var d = await UploadDrawing(admin, "reuse file d");
+        var a = await UploadDrawing(admin, "shared file a"); var d = await UploadDrawing(admin, "shared file d");
         var job = await RunBulk(admin, Workbook([
-            Row("91 100 001 A", "Linde", "EFG 218", a.AbsoluteUrl),    // ok
-            Row("91 100 002 A", "Linde", "EFG 218", a.AbsoluteUrl),    // same URL as row above
-            Row("91 100 003 A", "Linde", "EFG 218", a2.AbsoluteUrl),   // different upload, identical content
-            Row("91 100 004 A", "Linde", "EFG 218", c.AbsoluteUrl),    // ok
+            Row("91 100 001 A", "Linde", "EFG 218", a.AbsoluteUrl),
+            Row("91 100 002 A", "Linde", "EFG 218", a.AbsoluteUrl),   // same URL on a second row is fine
         ]), skip: false, auto: false);
-        (job.CreatedCount, job.ErrorCount).ShouldBe((2, 2));
-        var errs = await admin.GetAsync($"/api/bulk-import/{job.Id}/errors").Ok<List<BulkErrorDto>>();
-        errs.Select(e => e.RowNumber).ShouldBe([3, 4]); errs.All(e => e.Message.Contains("91 100 001 A")).ShouldBeTrue();
-        // a second import that reuses the file of an existing drawing is refused as well
-        var job2 = await RunBulk(admin, Workbook([Row("91 100 005 A", "Linde", "EFG 218", c.AbsoluteUrl)]), skip: false, auto: false);
-        (job2.CreatedCount, job2.ErrorCount).ShouldBe((0, 1));
+        (job.CreatedCount, job.ErrorCount).ShouldBe((2, 0));
+        var job2 = await RunBulk(admin, Workbook([Row("91 100 005 A", "Linde", "EFG 218", a.AbsoluteUrl)]), skip: false, auto: false);   // and across imports
+        (job2.CreatedCount, job2.ErrorCount).ShouldBe((1, 0));
 
-        // single create / correction of the file on an existing drawing
+        var shared = await admin.PostAsJsonAsync("/api/drawings", new { drawingNumber = "91 100 011 A", modelId = Model(b, "EFG 218"), voltageV = 48, ahValue = 560, ahStandard = "", lengthMm = 1112, widthMm = 555, heightMm = 777, connectorTypeId = Conn(b, "DIN 160A"), fileId = a.Id });
+        shared.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        // correction of the file / connector on an existing drawing
         var created = await CreateDrawing(admin, "91 100 010 A", Model(b, "EFG 218"), Conn(b, "DIN 160A"), l: 1111, w: 555, h: 777);
-        var reuse = await admin.PostAsJsonAsync("/api/drawings", new { drawingNumber = "91 100 011 A", modelId = Model(b, "EFG 218"), voltageV = 48, ahValue = 560, ahStandard = "", lengthMm = 1112, widthMm = 555, heightMm = 777, connectorTypeId = Conn(b, "DIN 160A"), fileId = c.Id });
-        reuse.StatusCode.ShouldBe((HttpStatusCode)422);
         var fixedUp = await admin.PutAsJsonAsync($"/api/drawings/{created.Drawing.Id}", new { drawingNumber = "91 100 010 A", modelId = Model(b, "EFG 218"), voltageV = 48, ahValue = 560, ahStandard = "", lengthMm = 1111, widthMm = 555, heightMm = 777, connectorName = "Brand New Plug 99", status = "Active", fileId = d.Id }).Ok<DrawingDetailDto>();
         fixedUp.Drawing.Connector.ShouldBe("Brand New Plug 99");
         fixedUp.File!.Id.ShouldBe(d.Id); fixedUp.Revisions.Count.ShouldBe(1);   // corrected in place, no new revision

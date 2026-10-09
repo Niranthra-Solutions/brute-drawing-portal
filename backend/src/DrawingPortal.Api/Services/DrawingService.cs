@@ -189,19 +189,6 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         return c.Id;
     }
 
-    /// <summary>The same drawing file (same id or identical content) must never be attached to two drawings.</summary>
-    private async Task CheckFileNotInUseAsync(StoredFile file, string? thisDrawingId, FieldErrors errs, CancellationToken ct)
-    {
-        var sha = file.Sha256;
-        var other = await db.Revisions.AsNoTracking().Where(r => r.Drawing != null && r.DrawingId != thisDrawingId && (r.FileId == file.Id || (sha != "" && r.File!.Sha256 == sha))).Select(r => r.DrawingNumber).FirstOrDefaultAsync(ct);
-        if (other is not null) { errs.Add("fileId", $"This drawing file is already used by drawing {other}. Upload the correct, separate file for this drawing."); return; }
-        if (thisDrawingId is not null)
-        {
-            var same = await db.Drawings.AsNoTracking().AnyAsync(x => x.Id == thisDrawingId && x.CurrentFileId != null && (x.CurrentFileId == file.Id || x.CurrentFile!.Sha256 == sha), ct);
-            if (same) errs.Add("fileId", "This is the same file that is already attached to this drawing.");
-        }
-    }
-
     private string Snapshot(Drawing d) => JsonSerializer.Serialize(new { d.DrawingNumber, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard, d.LengthMm, d.WidthMm, d.HeightMm, d.ConnectorTypeId }, Json);
 
     public async Task<DrawingDetailDto> CreateAsync(CreateDrawingDto dto, CancellationToken ct)
@@ -211,7 +198,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         dto.ConnectorTypeId = await ResolveConnectorAsync(dto.ConnectorTypeId, dto.ConnectorName, errs, ct) ?? "";
         await ValidateInputAsync(dto, errs, s, null, ct);
         var file = await db.Files.FirstOrDefaultAsync(f => f.Id == dto.FileId && f.Kind == FileKind.Drawing, ct);
-        if (file is null) errs.Add("fileId", "Upload a drawing file first."); else await CheckFileNotInUseAsync(file, null, errs, ct);
+        if (file is null) errs.Add("fileId", "Upload a drawing file first.");
         errs.ThrowIfAny();
 
         var d = new Drawing
@@ -243,7 +230,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (!string.IsNullOrWhiteSpace(dto.FileId) && dto.FileId != d.CurrentFileId)
         {
             newFile = await db.Files.FirstOrDefaultAsync(f => f.Id == dto.FileId && f.Kind == FileKind.Drawing, ct);
-            if (newFile is null) errs.Add("fileId", "Upload the corrected drawing file first."); else await CheckFileNotInUseAsync(newFile, id, errs, ct);
+            if (newFile is null) errs.Add("fileId", "Upload the corrected drawing file first.");
         }
         errs.ThrowIfAny();
         var before = Snapshot(d);
@@ -270,7 +257,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         var s = await settings.GetAsync(ct);
         var errs = new FieldErrors();
         var file = await db.Files.FirstOrDefaultAsync(f => f.Id == dto.FileId && f.Kind == FileKind.Drawing, ct);
-        if (file is null) errs.Add("fileId", "Upload the revised drawing file first."); else await CheckFileNotInUseAsync(file, id, errs, ct);
+        if (file is null) errs.Add("fileId", "Upload the revised drawing file first.");
 
         dto.ConnectorTypeId = await ResolveConnectorAsync(dto.ConnectorTypeId, dto.ConnectorName, errs, ct);
         var newNumber = string.IsNullOrWhiteSpace(dto.NewDrawingNumber) ? d.DrawingNumber : DrawingNumberFormat.Normalize(dto.NewDrawingNumber);
