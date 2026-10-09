@@ -1,0 +1,14 @@
+frontend/src/pages/admin/bulk-import.tsx
+  h_51a00495fb6020 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cdb3155d62503a27450c631aa44821e493811c2f",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
