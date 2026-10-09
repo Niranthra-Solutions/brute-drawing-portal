@@ -148,7 +148,7 @@ export default function DrawingFilesPage() {
         ),
     },
     {
-      header: "URL for bulk Excel",
+      header: "URL",
       cell: ({ row: { original: d } }) => (
         <div className="flex items-center gap-1.5">
           <button

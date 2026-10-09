@@ -185,12 +185,10 @@ function SidebarBody({
           collapsed && "justify-center px-0",
         )}
       >
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground">
-          <Logo size={20} />
-        </div>
+       
         {!collapsed && (
-          <div className="font-heading text-[15px] leading-tight font-bold">
-            Drawing Portal
+          <div className="font-heading text-[15px] leading-tight font-bold uppercase tracking-wide text-foreground">
+            Amaron Brute Drawing Portal
           </div>
         )}
       </div>
