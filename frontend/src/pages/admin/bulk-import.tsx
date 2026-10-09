@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Advisory, Card2, Empty, ErrorState, FormError, Loading, PageHeader, StatusBadge, errMsg, notify } from '@/components/app/common'
+import {  Card2, Empty, ErrorState, FormError, Loading, PageHeader, StatusBadge, errMsg, notify } from '@/components/app/common'
 import { VirtualTable } from '@/components/app/data-table'
 
 interface RowError { rowNumber: number; drawingNumber: string | null; message: string }
