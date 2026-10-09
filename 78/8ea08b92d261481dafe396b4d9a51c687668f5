@@ -1,0 +1,15 @@
+frontend/src/pages/admin/drawing-files.tsx
+  h_51a00495fb6020 128,141-147
+  h_51a00495fb6020 4,129-130,366
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "788ea08b92d261481dafe396b4d9a51c687668f5",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
