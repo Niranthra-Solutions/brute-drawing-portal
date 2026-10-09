@@ -63,7 +63,7 @@ const common = (admin: boolean): { title: string; items: Item[] }[] => [
     items: [
       { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
       { to: "/search", icon: Search, label: "Drawing search" },
-      { to: "/search/number", icon: Hash, label: "Search by number" },
+      { to: "/search-by-number", icon: Hash, label: "Search by number" },
     ],
   },
   {
@@ -395,7 +395,7 @@ export function Shell() {
   const go = (e: FormEvent) => {
     e.preventDefault();
     if (quick.trim()) {
-      nav(`/search/number?number=${encodeURIComponent(quick.trim())}`);
+      nav(`/search-by-number?number=${encodeURIComponent(quick.trim())}`);
       setQuick("");
     }
   };
