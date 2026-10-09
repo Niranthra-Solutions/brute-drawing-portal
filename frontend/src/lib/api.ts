@@ -52,7 +52,13 @@ function toApiError(e: unknown): ApiError {
         for (const [k, v] of Object.entries(d.errors))
           fields[k.charAt(0).toLowerCase() + k.slice(1)] = v[0];
     }
-    return new ApiError(s, fields.file ?? title, fields);
+    return new ApiError(
+      s,
+      fields.file ??
+        (s === 422 ? Object.values(fields)[0] : undefined) ??
+        title,
+      fields,
+    );
   }
   return new ApiError(0, "Unexpected error.");
 }

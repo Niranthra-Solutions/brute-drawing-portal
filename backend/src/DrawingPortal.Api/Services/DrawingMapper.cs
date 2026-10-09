@@ -17,7 +17,7 @@ public static class DrawingMapper
     public static bool IsPreviewable(string? fileName)
     {
         var ext = Path.GetExtension(fileName ?? "").ToLowerInvariant();
-        return ext is ".pdf" or ".png" or ".jpg" or ".jpeg";
+        return ext is ".pdf" or ".png" or ".jpg" or ".jpeg" or ".mp4" or ".mov" or ".m4v" or ".webm";
     }
 
     public static string AhLabel(int v, string std) => string.IsNullOrEmpty(std) ? v.ToString() : $"{v}({std})";

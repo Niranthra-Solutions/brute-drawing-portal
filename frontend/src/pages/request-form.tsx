@@ -102,7 +102,7 @@ const makeSchema = (mode: "New" | "Modification") =>
           code: "custom",
           path: ["attachments"],
           message:
-            "Attach a reference image or drawing (jpg, png, pdf or dwg).",
+            "Attach a reference image, drawing or video (jpg, png, pdf, dwg, mp4, mov or webm).",
         });
     });
 type Values = z.infer<ReturnType<typeof makeSchema>>;
@@ -608,7 +608,7 @@ export default function RequestFormPage({
           </SectionCard>
           <SectionCard
             icon={UploadCloud}
-            title="Design reference image or drawing *"
+            title="Design reference image, drawing or video *"
           >
             {files.map((x) => (
               <div key={x.id} className="mb-3 flex items-center gap-2">
@@ -628,8 +628,8 @@ export default function RequestFormPage({
               <FileUpload
                 key={files.length}
                 endpoint="/api/files/attachments"
-                accept=".jpg,.jpeg,.png,.pdf,.dwg"
-                hint="jpg, png, pdf or dwg · up to 10 MB each · max 5 files"
+                accept=".jpg,.jpeg,.png,.pdf,.dwg,.mp4,.mov,.m4v,.webm"
+                hint="Image, PDF, DWG (up to 10 MB) or video mp4 / mov / webm (up to 200 MB) · max 5 files"
                 compact
                 onUploaded={addFile}
               />

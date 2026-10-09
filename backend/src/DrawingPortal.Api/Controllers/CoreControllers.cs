@@ -105,7 +105,7 @@ public sealed class FilesController(IFileStorage storage, AppDbContext db, ICurr
     [HttpPost("drawings"), Authorize(Policies.Admin), EnableRateLimiting("upload"), RequestSizeLimit(60_000_000)]
     public async Task<UploadedFileDto> UploadDrawing(IFormFile? file, CancellationToken ct) => ToDto(await storage.SaveAsync(Single(file), FileKind.Drawing, me.Id, ct));
 
-    [HttpPost("attachments"), EnableRateLimiting("upload"), RequestSizeLimit(15_000_000)]
+    [HttpPost("attachments"), EnableRateLimiting("upload"), RequestSizeLimit(210_000_000)]
     public async Task<UploadedFileDto> UploadAttachment(IFormFile? file, CancellationToken ct) => ToDto(await storage.SaveAsync(Single(file), FileKind.RequestAttachment, me.Id, ct));
 
     [HttpPost("documents"), Authorize(Policies.Admin), EnableRateLimiting("upload"), RequestSizeLimit(210_000_000)]

@@ -104,7 +104,6 @@ export default function DrawingFilesPage() {
           </Pill>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
-          
             <Button
               type="button"
               size="sm"
@@ -115,36 +114,34 @@ export default function DrawingFilesPage() {
                 setView(d);
               }}
             >
-           
               <Pill tone="orange" dot={false}>
-           {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""} 
-          </Pill>
-            
+                {d.usedByCount} drawing{d.usedByCount > 1 ? "s" : ""}
+              </Pill>
             </Button>
           </div>
         ),
     },
     {
       header: "URL",
-      cell: ({ row: { original: d } }) =>
-         <button
-            type="button"
-            title="Click to copy"
-            className="max-w-[200px] truncate rounded-md border bg-panel px-2 py-1 text-left font-mono text-[11px] hover:border-brand"
-            onClick={(e) => {
-              e.stopPropagation();
-              void copy(d.absoluteUrl, "URL");
-            }}
-          >
-            {d.absoluteUrl}
-          </button>
+      cell: ({ row: { original: d } }) => (
+        <button
+          type="button"
+          title="Click to copy"
+          className="max-w-[200px] truncate rounded-md border bg-panel px-2 py-1 text-left font-mono text-[11px] hover:border-brand"
+          onClick={(e) => {
+            e.stopPropagation();
+            void copy(d.absoluteUrl, "URL");
+          }}
+        >
+          {d.absoluteUrl}
+        </button>
+      ),
     },
     {
       id: "actions",
       header: "",
       cell: ({ row: { original: d } }) => (
         <div className="flex items-center gap-1.5">
-         
           <Button
             type="button"
             size="icon"

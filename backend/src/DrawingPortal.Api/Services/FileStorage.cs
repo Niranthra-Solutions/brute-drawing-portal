@@ -23,7 +23,10 @@ public static class FileRules
         [".jpeg"] = new("image/jpeg", true, (b, n) => Starts(b, n, 0xFF, 0xD8, 0xFF)),
         [".dwg"]  = new("application/acad", false, (b, n) => n >= 6 && b[0] == 'A' && b[1] == 'C' && b[2] == '1' && b[3] is >= (byte)'0' and <= (byte)'9'),
         [".dxf"]  = new("image/vnd.dxf", false, (b, n) => Contains(b, n, "SECTION") || Contains(b, n, "AutoCAD Binary DXF")),
-        [".mp4"]  = new("video/mp4", false, (b, n) => n >= 12 && b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p'),
+        [".mp4"]  = new("video/mp4", true, (b, n) => n >= 12 && b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p'),
+        [".m4v"]  = new("video/x-m4v", true, (b, n) => n >= 12 && b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p'),
+        [".mov"]  = new("video/quicktime", true, (b, n) => n >= 12 && ((b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p') || (b[4] == 'm' && b[5] == 'o' && b[6] == 'o' && b[7] == 'v') || (b[4] == 'm' && b[5] == 'd' && b[6] == 'a' && b[7] == 't') || (b[4] == 'w' && b[5] == 'i' && b[6] == 'd' && b[7] == 'e') || (b[4] == 'f' && b[5] == 'r' && b[6] == 'e' && b[7] == 'e'))),
+        [".webm"] = new("video/webm", true, (b, n) => Starts(b, n, 0x1A, 0x45, 0xDF, 0xA3)),
         [".pptx"] = new("application/vnd.openxmlformats-officedocument.presentationml.presentation", false, (b, n) => Starts(b, n, 0x50, 0x4B, 0x03, 0x04)),
         [".docx"] = new("application/vnd.openxmlformats-officedocument.wordprocessingml.document", false, (b, n) => Starts(b, n, 0x50, 0x4B, 0x03, 0x04)),
         [".xlsx"] = new("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", false, (b, n) => Starts(b, n, 0x50, 0x4B, 0x03, 0x04)),
@@ -35,7 +38,7 @@ public static class FileRules
     public static readonly Dictionary<FileKind, string[]> Allowed = new()
     {
         [FileKind.Drawing] = [".dwg", ".dxf", ".pdf", ".png", ".jpg", ".jpeg"],
-        [FileKind.RequestAttachment] = [".jpg", ".jpeg", ".png", ".pdf", ".dwg"],
+        [FileKind.RequestAttachment] = [".jpg", ".jpeg", ".png", ".pdf", ".dwg", ".mp4", ".mov", ".m4v", ".webm"],
         [FileKind.Document] = [".pdf", ".pptx", ".ppt", ".docx", ".doc", ".xlsx", ".xls", ".mp4", ".png", ".jpg", ".jpeg"],
     };
 
@@ -58,8 +61,9 @@ public sealed class FileStorage(AppDbContext db, IOptions<StorageOptions> opt, I
 {
     private string Root => Path.GetFullPath(Path.IsPathRooted(opt.Value.RootPath) ? opt.Value.RootPath : Path.Combine(env.ContentRootPath, opt.Value.RootPath));
 
-    private long MaxBytes(FileKind k) => 1024L * 1024 * k switch
-    { FileKind.Drawing => opt.Value.MaxDrawingMb, FileKind.RequestAttachment => opt.Value.MaxAttachmentMb, _ => opt.Value.MaxDocumentMb };
+    private static bool IsVideo(string ext) => ext is ".mp4" or ".mov" or ".m4v" or ".webm";
+    private long MaxBytes(FileKind k, string ext) => 1024L * 1024 * k switch
+    { FileKind.Drawing => opt.Value.MaxDrawingMb, FileKind.RequestAttachment => IsVideo(ext) ? opt.Value.MaxVideoMb : opt.Value.MaxAttachmentMb, _ => opt.Value.MaxDocumentMb };
 
     public async Task<StoredFile> SaveAsync(IFormFile file, FileKind kind, string? userId, CancellationToken ct)
     {
@@ -87,7 +91,7 @@ public sealed class FileStorage(AppDbContext db, IOptions<StorageOptions> opt, I
         if (!full.StartsWith(Root + Path.DirectorySeparatorChar, StringComparison.Ordinal)) throw ApiException.BadRequest("Invalid path.");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
 
-        var limit = MaxBytes(kind);
+        var limit = MaxBytes(kind, ext);
         var head = new byte[2048]; var headLen = 0; long total = 0; var firstChunk = true;
         using var sha = SHA256.Create();
         try

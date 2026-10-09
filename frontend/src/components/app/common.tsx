@@ -41,17 +41,15 @@ export function applyServerErrors<T extends FieldValues>(
   map: Record<string, string> = {},
 ): string | undefined {
   if (!(e instanceof ApiError)) return errMsg(e);
-  let matched = 0;
   for (const [k, msg] of Object.entries(e.fields)) {
     const name = (map[k] ?? k) as Path<T>;
     if (name in form.getValues() || map[k]) {
       form.setError(name, { type: "server", message: msg });
-      matched++;
     }
   }
-  return matched === 0 || Object.keys(e.fields).length === 0
-    ? e.message
-    : undefined;
+  // always spell out the server's reasons, so an error on a field with no visible input is never silent
+  const reasons = [...new Set(Object.values(e.fields))];
+  return reasons.length > 0 ? reasons.join(" ") : e.message;
 }
 
 const TONES = {

@@ -67,6 +67,8 @@ public sealed class StorageOptions
     public string RootPath { get; set; } = "App_Data/files";
     public int MaxDrawingMb { get; set; } = 50;
     public int MaxAttachmentMb { get; set; } = 10;
+    /// <summary>Reference videos on drawing requests (mp4, mov, webm).</summary>
+    public int MaxVideoMb { get; set; } = 200;
     public int MaxDocumentMb { get; set; } = 200;
 }
 
