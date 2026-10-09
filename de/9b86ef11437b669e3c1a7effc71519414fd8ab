@@ -1,0 +1,35 @@
+backend/src/DrawingPortal.Api/Controllers/CoreControllers.cs
+  h_51a00495fb6020 62,64,92-98,103
+  h_51a00495fb6020 100-102,104,219-220
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 131-132
+backend/src/DrawingPortal.Api/Program.cs
+  h_51a00495fb6020 117-127
+backend/src/DrawingPortal.Api/Services/AuditService.cs
+  h_51a00495fb6020 23-25
+backend/src/DrawingPortal.Api/Services/BulkImport.cs
+  h_51a00495fb6020 120-135,255-268,289
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 206-215,217-219,222-232,297-307
+backend/src/DrawingPortal.Api/Services/FileStorage.cs
+  h_51a00495fb6020 19-21,23-25,29-31
+backend/src/DrawingPortal.Api/Services/MasterDataService.cs
+  h_51a00495fb6020 42-46,53-57,72-76,102-105
+backend/src/DrawingPortal.Api/Services/RequestService.cs
+  h_51a00495fb6020 97-118,174-185
+frontend/src/lib/types.ts
+  h_51a00495fb6020 159-176
+frontend/src/pages/admin/drawing-files.tsx
+  h_51a00495fb6020 2,91-92,96,99-102,104-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "de9b86ef11437b669e3c1a7effc71519414fd8ab",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
