@@ -16,7 +16,6 @@ import { Advisory, FormError, Loading, PageHeader, SectionCard, Spinner, applySe
 import { FInput, FSelect, FTextarea } from '@/components/app/fields'
 import { FileUpload } from '@/components/app/file-upload'
 import { VehicleFields } from '@/components/app/vehicle-fields'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type Mode = 'new' | 'edit' | 'revision'
 interface PendingVehicle { category: string; make: string; type: string; model: string; capacity: string }
@@ -27,17 +26,37 @@ const empty: Values = { vehicle: emptyVehicle, number: '', volt: '', ahId: '', l
 function ExistingDrawings({ number, modelId, ignoreId, complete }: { number: string; modelId: string; ignoreId?: string; complete: boolean }) {
   const byNumber = useQuery({ queryKey: ['drawings', 'num', number], queryFn: () => api.get<Paged<Drawing>>('/api/drawings', { number, pageSize: 50, sort: 'make', dir: 'asc' }), enabled: complete })
   const byVehicle = useQuery({ queryKey: ['drawings', 'veh', modelId], queryFn: () => api.get<Paged<Drawing>>('/api/drawings', { modelId, pageSize: 50, sort: 'number', dir: 'asc' }), enabled: !!modelId })
-  const num = (byNumber.data?.items ?? []).filter(d => d.id !== ignoreId); const veh = (byVehicle.data?.items ?? []).filter(d => d.id !== ignoreId)
-  if (!num.length && !veh.length) return null
-  const Tbl = ({ rows }: { rows: Drawing[] }) => (
-    <Table><TableHeader><TableRow className="hover:bg-transparent">{['Drawing no.', 'Vehicle', 'Ah', 'V', 'L × W × H', 'Rev', ''].map(h => <TableHead key={h} className="h-9 px-3 text-[11px] font-bold uppercase">{h}</TableHead>)}</TableRow></TableHeader>
-      <TableBody>{rows.map(d => <TableRow key={d.id}><TableCell className="px-3 font-mono font-bold text-brand-dark">{d.drawingNumber}</TableCell><TableCell className="px-3">{d.make} {d.model}<div className="text-xs text-muted-foreground">{d.category} · {d.vehicleType} · {d.capacity}</div></TableCell>
-        <TableCell className="px-3">{d.ah}</TableCell><TableCell className="px-3">{d.voltageV}</TableCell><TableCell className="px-3 font-mono text-xs">{d.lengthMm} × {d.widthMm} × {d.heightMm}</TableCell><TableCell className="px-3">{d.revisionLabel}</TableCell>
-        <TableCell className="px-3"><Link to={`/drawings/${d.id}`} target="_blank" className="inline-flex items-center gap-1 text-xs font-bold text-brand-dark"><ExternalLink className="size-3.5" />Open</Link></TableCell></TableRow>)}</TableBody></Table>)
+  const num = (complete ? byNumber.data?.items ?? [] : []).filter(d => d.id !== ignoreId); const veh = (modelId ? byVehicle.data?.items ?? [] : []).filter(d => d.id !== ignoreId)
+  const Row = ({ d }: { d: Drawing }) => (
+    <Link to={`/drawings/${d.id}`} target="_blank" className="group flex items-start gap-3 rounded-xl border bg-background px-3 py-2.5 hover:border-brand/50 hover:bg-brand-soft/40">
+      <div className="min-w-0 flex-1">
+        <div className="font-mono text-[13px] font-bold text-brand-dark">{d.drawingNumber}</div>
+        <div className="truncate text-[13px] font-semibold">{d.make} {d.model} <span className="font-normal text-muted-foreground">· {d.capacity}</span></div>
+        <div className="mt-0.5 text-xs text-muted-foreground">{d.ah} · {d.voltageV} V · {d.lengthMm}×{d.widthMm}×{d.heightMm} · Rev {d.revisionLabel}</div>
+      </div>
+      <ExternalLink className="mt-1 size-3.5 shrink-0 text-muted-foreground group-hover:text-brand-dark" />
+    </Link>)
+  const Group = ({ title, rows }: { title: string; rows: Drawing[] }) => (
+    <div className="mt-4 first:mt-0"><div className="mb-2 text-[12px] font-bold tracking-wide text-muted-foreground uppercase">{title} ({rows.length})</div><div className="grid max-h-[300px] gap-2 overflow-y-auto pr-1">{rows.map(d => <Row key={d.id} d={d} />)}</div></div>)
   return (
     <SectionCard icon={Info} title="Already in the portal">
-      {num.length > 0 && <><div className="mb-2 text-[13px] font-bold">{num.length} drawing{num.length > 1 ? 's' : ''} already use the number {number} (other makes / models)</div><Tbl rows={num} /></>}
-      {veh.length > 0 && <><div className={`mb-2 text-[13px] font-bold ${num.length ? 'mt-5' : ''}`}>{veh.length} drawing{veh.length > 1 ? 's' : ''} already saved for this vehicle</div><Tbl rows={veh} /></>}
+      {!num.length && !veh.length
+        ? <p className="text-[13px] text-muted-foreground">Pick the vehicle and type the drawing number. Drawings already saved with the same number, or for the same vehicle, appear here so you can check before saving.</p>
+        : <>
+          {num.length > 0 && <Group title={`Same number ${number}`} rows={num} />}
+          {veh.length > 0 && <Group title="Same vehicle" rows={veh} />}
+        </>}
+    </SectionCard>
+  )
+}
+
+/** Live checklist + summary of what is being saved. */
+function Summary({ items }: { items: [string, string | undefined | false][] }) {
+  return (
+    <SectionCard icon={Check} title="Summary">
+      <dl className="grid gap-2 text-[13px]">
+        {items.map(([k, v]) => <div key={k} className="flex items-start justify-between gap-3"><dt className="text-muted-foreground">{k}</dt><dd className={v ? 'text-right font-semibold [overflow-wrap:anywhere]' : 'text-right text-muted-foreground/60'}>{v || '—'}</dd></div>)}
+      </dl>
     </SectionCard>
   )
 }
@@ -145,16 +164,18 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
       {req.data && <Advisory tone="blue" icon={Info} title={`Working on ${req.data.ticketNo} — ${req.data.title}`}>Saving this drawing closes the ticket automatically and e-mails {req.data.requestedByName}. <Link className="font-bold underline" to={`/requests/${req.data.id}`}>View request</Link></Advisory>}
       <Form {...form}>
         <form onSubmit={submit} noValidate>
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid gap-0">
           <FormError>{err}</FormError>
           {mode !== 'edit' && (
-            <SectionCard icon={Upload} title="Drawing file *">
+            <SectionCard icon={Upload} title="1 · Upload the drawing file *">
               <FileUpload endpoint="/api/files/drawings" accept=".dwg,.dxf,.pdf,.png,.jpg,.jpeg" hint="DWG, DXF, PDF, PNG or JPG · up to 50 MB · PDF/PNG/JPG also give users an in-browser preview" value={file} showUrl
                 onUploaded={f => { setFile(f); form.setValue('fileId', f.id, { shouldValidate: true }) }} onCleared={() => { setFile(null); form.setValue('fileId', '') }} />
               {form.formState.errors.fileId && <p role="alert" className="mt-1.5 text-xs font-semibold text-destructive">{form.formState.errors.fileId.message}</p>}
             </SectionCard>
           )}
           {mode === 'edit' && (
-            <SectionCard icon={Upload} title="Replace drawing file (optional)">
+            <SectionCard icon={Upload} title="1 · Replace drawing file (optional)">
               <p className="mb-3 text-[13px] text-muted-foreground">Current file: <b className="text-foreground">{src.data?.file?.name ?? 'none'}</b>. Upload here only to <b>correct a wrong upload</b> - the file is swapped in place and <b>no new revision</b> is created. Use "Upload revised drawing" for a real revision.</p>
               <FileUpload endpoint="/api/files/drawings" accept=".dwg,.dxf,.pdf,.png,.jpg,.jpeg" hint="DWG, DXF, PDF, PNG or JPG · up to 50 MB" value={file} showUrl
                 onUploaded={f => { setFile(f); form.setValue('fileId', f.id, { shouldValidate: true }) }} onCleared={() => { setFile(null); form.setValue('fileId', '') }} />
@@ -167,25 +188,39 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
               <Button type="button" size="sm" variant="outline" className="ml-3" disabled={adding} onClick={addPending}>{adding && <Spinner />}Add to master data now</Button>
             </Advisory>
           )}
-          <SectionCard icon={Layers} title="Vehicle"><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><VehicleFields onResolved={setModelId} /></div></SectionCard>
-          <SectionCard icon={Database} title="Drawing details">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <FInput control={control} name="number" label="Drawing number" required mono placeholder={example} transform={(v, prev) => formatByMask(v, mask, v.length < prev.length)} hint={`${maskHint(mask)} · e.g. ${example}${mode === 'revision' ? ' · change only if the revision gets a new number' : ''}`} />
+          <SectionCard icon={Layers} title="2 · Which vehicle is it for?"><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><VehicleFields onResolved={setModelId} /></div></SectionCard>
+          <SectionCard icon={Database} title="3 · Drawing number & battery">
+            <div className="grid gap-4 md:grid-cols-3">
+              <FInput control={control} name="number" label="Drawing number" required mono placeholder={example} transform={(v, prev) => formatByMask(v, mask, v.length < prev.length)} hint={`${maskHint(mask)}${mode === 'revision' ? ' · change only if the revision gets a new number' : ''}`} />
               <FSelect control={control} name="volt" label="Voltage (V)" required options={b.voltages.map(v => ({ value: String(v.valueV), label: `${v.valueV} V` }))} />
               <FSelect control={control} name="ahId" label="Ah rating" required options={b.ahRatings.map(a => ({ value: a.id, label: a.label }))} />
-              <FInput control={control} name="l" label="Length (mm)" required numeric mono maxLength={4} hint="3 or 4 digits" />
-              <FInput control={control} name="w" label="Width (mm)" required numeric mono maxLength={4} hint="3 or 4 digits" />
-              <FInput control={control} name="h" label="Height (mm)" required numeric mono maxLength={4} hint="3 or 4 digits" />
-              <FInput control={control} name="connector" label="End connector" required list="connector-list" maxLength={100} placeholder="Pick from the list or type your own" hint="Choose a standard connector, or type a new one - it is added to master data." />
+            </div>
+            <div className="mt-5 mb-2 text-xs font-bold">Tray size (mm) <span className="text-destructive">*</span> <span className="font-normal text-muted-foreground">· 3 or 4 digits each</span></div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <FInput control={control} name="l" label="Length (L)" numeric mono maxLength={4} placeholder="e.g. 1220" />
+              <FInput control={control} name="w" label="Width (W)" numeric mono maxLength={4} placeholder="e.g. 350" />
+              <FInput control={control} name="h" label="Height (H)" numeric mono maxLength={4} placeholder="e.g. 780" />
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <FInput control={control} name="connector" label="End connector" required list="connector-list" maxLength={100} placeholder="Pick from the list or type your own" hint="Not in the list? Type it - it is added to master data." />
               <datalist id="connector-list">{b.connectors.map(c => <option key={c.id} value={c.name} />)}</datalist>
-              {mode !== 'revision' && <FInput control={control} name="competitor" label="Competitor drawing number" mono maxLength={60} />}
               {mode === 'edit' && <FSelect control={control} name="status" label="Status" options={[{ value: 'Active', label: 'Active' }, { value: 'Archived', label: 'Archived' }]} />}
             </div>
-            {mode !== 'revision' && <div className="mt-4"><FTextarea control={control} name="comments" label="Comments" maxLength={2000} /></div>}
-            {mode === 'revision' && <div className="mt-4"><FTextarea control={control} name="notes" label="What changed in this revision?" required maxLength={2000} /></div>}
+            {mode === 'revision' && <div className="mt-5"><FTextarea control={control} name="notes" label="What changed in this revision?" required maxLength={2000} /></div>}
           </SectionCard>
-          {mode !== 'revision' && <ExistingDrawings number={form.watch('number')} modelId={modelId ?? ''} ignoreId={mode === 'edit' ? id : undefined} complete={form.watch('number').length === mask.length} />}
-          <div className="flex justify-end gap-2.5">
+          {mode !== 'revision' && (
+            <SectionCard icon={Info} title="4 · Optional">
+              <div className="grid gap-4 md:grid-cols-2"><FInput control={control} name="competitor" label="Competitor drawing number" mono maxLength={60} /></div>
+              <div className="mt-4"><FTextarea control={control} name="comments" label="Comments" maxLength={2000} /></div>
+            </SectionCard>)}
+          </div>
+          <aside className="grid gap-0 xl:sticky xl:top-4">
+            {mode !== 'revision' && <ExistingDrawings number={form.watch('number')} modelId={modelId ?? ''} ignoreId={mode === 'edit' ? id : undefined} complete={form.watch('number').length === mask.length} />}
+            <Summary items={[['File', file?.name ?? (mode === 'edit' ? src.data?.file?.name : undefined)], ['Drawing number', form.watch('number') || undefined], ['Voltage', form.watch('volt') ? `${form.watch('volt')} V` : undefined],
+              ['Ah rating', b.ahRatings.find(a => a.id === form.watch('ahId'))?.label], ['Tray size', form.watch('l') && form.watch('w') && form.watch('h') ? `${form.watch('l')} × ${form.watch('w')} × ${form.watch('h')} mm` : undefined], ['Connector', form.watch('connector') || undefined]]} />
+          </aside>
+          </div>
+          <div className="sticky bottom-0 z-10 mt-5 flex justify-end gap-2.5 border-t bg-background/90 py-3 backdrop-blur">
             <Button asChild variant="outline"><Link to={mode === 'new' ? '/admin/drawings' : `/drawings/${id}`}>Cancel</Link></Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? <Spinner /> : <Check />}{mode === 'new' ? 'Save drawing' : mode === 'edit' ? 'Save changes' : 'Save revision'}</Button>
           </div>
