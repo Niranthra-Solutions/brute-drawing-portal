@@ -26,7 +26,8 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> log) : IExc
         }
         p.Extensions["traceId"] = ctx.TraceIdentifier;
         ctx.Response.StatusCode = p.Status ?? 500;
-        await ctx.Response.WriteAsJsonAsync(p, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json", ct);
+        // serialise as the RUNTIME type, otherwise the "errors" of a ValidationProblemDetails are dropped
+        await ctx.Response.WriteAsJsonAsync(p, p.GetType(), (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json", ct);
         return true;
     }
 }
