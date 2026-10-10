@@ -37,6 +37,7 @@ public sealed class DrawingsController(IDrawingService drawings) : ApiBase
 {
     [HttpGet("search")] public Task<SearchResultDto> Search([FromQuery] SearchQueryDto query, CancellationToken ct) => drawings.SearchAsync(query, ct);
     [HttpGet("by-number")] public Task<DrawingDetailDto> ByNumber([FromQuery] string number, CancellationToken ct) => drawings.FindByNumberAsync(number, ct);
+    [HttpGet("by-number/all")] public Task<NumberMatchesDto> ByNumberAll([FromQuery] string number, CancellationToken ct) => drawings.FindAllByNumberAsync(number, ct);
     [HttpGet("{id}")] public Task<DrawingDetailDto> Get(string id, CancellationToken ct) => drawings.GetAsync(id, ct);
 
     [HttpGet, Authorize(Policies.Admin)] public Task<PagedResult<DrawingDto>> List([FromQuery] DrawingListQuery query, CancellationToken ct) => drawings.ListAsync(query, ct);

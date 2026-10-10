@@ -59,6 +59,7 @@ public sealed record DrawingDto(
     string? Comments, string? CompetitorDrawingNumber, string Status, string RevisionLabel, string? FileId, string? FileName, bool CanPreview, DateTime UpdatedAtUtc);
 
 public sealed record SuggestionDto(DrawingDto Drawing, int DeltaLength, int DeltaWidth, int DeltaHeight, double FitPercent, bool SameModel, bool SameMake, bool SameAh);
+public sealed record NumberMatchesDto(IReadOnlyList<DrawingDto> Items, string? Note);
 public sealed record SearchResultDto(string Mode, IReadOnlyList<DrawingDto> Exact, IReadOnlyList<SuggestionDto> Similar, ToleranceDto Tolerance, string? Note, int TotalCandidates);
 public sealed record RevisionDto(string Id, int RevisionNo, string Label, string DrawingNumber, string? FileId, string? FileName, string? ChangeNotes, DateTime CreatedAtUtc, string? CreatedByName, string? RequestTicketNo, bool IsCurrent);
 public sealed record FileInfoDto(string Id, string Name, string ContentType, long SizeBytes, string Sha256, string Url, DateTime CreatedAtUtc, bool CanPreview);

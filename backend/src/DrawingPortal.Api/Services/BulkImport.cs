@@ -77,7 +77,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
         };
         var help = new List<Dictionary<string, object?>>
         {
-            new() { ["Column"] = "DrawingNumber", ["Rule"] = "Must match the drawing number format configured by the admin (default ## ### ### A)." },
+            new() { ["Column"] = "DrawingNumber", ["Rule"] = "Must match the drawing number format configured by the admin (default ## ### ### A). To use ONE number for several makes / models, add one row per vehicle with the same DrawingNumber (the DrawingUrl may be the same or different)." },
             new() { ["Column"] = "Category / Make / VehicleType / Model / Capacity / Connector", ["Rule"] = "Must exist in master data, unless 'Create missing master data' is ticked on the import screen." },
             new() { ["Column"] = "Voltage", ["Rule"] = "Number in volts, for example 48." },
             new() { ["Column"] = "AhRating", ["Rule"] = "Number, optionally followed by a standard in brackets: 560 or 620(DIN)." },

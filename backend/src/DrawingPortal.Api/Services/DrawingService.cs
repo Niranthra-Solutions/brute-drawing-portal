@@ -13,6 +13,7 @@ public interface IDrawingService
 {
     Task<SearchResultDto> SearchAsync(SearchQueryDto q, CancellationToken ct);
     Task<DrawingDetailDto> FindByNumberAsync(string number, CancellationToken ct);
+    Task<NumberMatchesDto> FindAllByNumberAsync(string number, CancellationToken ct);
     Task<DrawingDetailDto> GetAsync(string id, CancellationToken ct);
     Task<PagedResult<DrawingDto>> ListAsync(DrawingListQuery q, CancellationToken ct);
     Task<DrawingDetailDto> CreateAsync(CreateDrawingDto dto, CancellationToken ct);
@@ -101,6 +102,20 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (id is null) throw ApiException.NotFound($"No drawing was found with number {n}.");
         var detail = await GetAsync(id, ct);
         return detail with { MatchedNote = note };
+    }
+
+    /// <summary>Every drawing that carries this number (one number can serve several makes / models). Falls back to the superseded-number lookup.</summary>
+    public async Task<NumberMatchesDto> FindAllByNumberAsync(string number, CancellationToken ct)
+    {
+        var s = await settings.GetAsync(ct);
+        var n = DrawingNumberFormat.Normalize(number);
+        if (!s.Format.IsMatch(n)) throw ApiException.BadRequest($"Enter the drawing number in the format {s.Format.Mask.Replace("#", "9")} (for example {s.Format.Example}).", "number");
+        var q = db.Drawings.AsNoTracking().Where(d => d.DrawingNumber == n);
+        if (!user.IsAdmin) q = q.Where(d => d.Status == DrawingStatus.Active);
+        var rows = await q.OrderBy(d => d.Model!.Make!.Name).ThenBy(d => d.Model!.ModelName).Select(DrawingMapper.Row).Take(200).ToListAsync(ct);
+        if (rows.Count > 0) return new NumberMatchesDto(rows.Select(DrawingMapper.ToDto).ToList(), rows.Count > 1 ? $"{n} is used by {rows.Count} drawings (different makes / models). All of them are listed below." : null);
+        var one = await FindByNumberAsync(number, ct);   // superseded number or 404
+        return new NumberMatchesDto([one.Drawing], one.MatchedNote);
     }
 
     // ====================================================================== READ
