@@ -1,0 +1,31 @@
+backend/src/DrawingPortal.Api/Services/BulkImport.cs
+  h_51a00495fb6020 85,150,186-187,240-246,253,264
+  h_51a00495fb6020 120-125,249-251,272
+backend/src/DrawingPortal.Api/Program.cs
+  h_51a00495fb6020 157-168
+  h_51a00495fb6020 117-119,211
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 91-93,173-179,308
+  h_51a00495fb6020 172,214-216,218,221-222,286-287
+backend/src/DrawingPortal.Api/Services/RequestService.cs
+  h_51a00495fb6020 79
+  h_51a00495fb6020 94-99,155-156,318
+backend/src/DrawingPortal.Api/Data/AppDbContext.cs
+  h_51a00495fb6020 116
+  h_51a00495fb6020 264
+frontend/src/components/app/visual-comparison.tsx
+  h_51a00495fb6020 5,189,191-203,205,208-212,217-220,222
+frontend/src/pages/request-form.tsx
+  h_51a00495fb6020 419-429,587
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d84a8440ced03430a2065479968e8831863e7926",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
