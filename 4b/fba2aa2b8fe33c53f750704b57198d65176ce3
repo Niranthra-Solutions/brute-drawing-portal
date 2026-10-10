@@ -1,0 +1,19 @@
+frontend/src/pages/admin/drawing-form.tsx
+  h_51a00495fb6020 1-18,20-23,26-31,36-37,40,42,45-49,51,53,61,64,68-74,77-85,89-92,94,96-98,101,103-104,106-108,111-112,115,117,119-120,122-124,128-138,140-143,145-148,150-152,154-162,166-167,173,176-177,180,182,184-185,190,197-199,201,205,207-210,212-223,227-228,233
+  h_51a00495fb6020 33,35,76,116,171-172,174-175,178-179,181,183,186-189,191-196,200,202-204,206,224,234
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 114
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4bfba2aa2b8fe33c53f750704b57198d65176ce3",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
