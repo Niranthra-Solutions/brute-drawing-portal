@@ -154,6 +154,8 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         }
         if (!string.IsNullOrEmpty(q.CategoryId)) qy = qy.Where(d => d.Model!.CategoryId == q.CategoryId);
         if (!string.IsNullOrEmpty(q.MakeId)) qy = qy.Where(d => d.Model!.MakeId == q.MakeId);
+        if (!string.IsNullOrEmpty(q.ModelId)) qy = qy.Where(d => d.ModelId == q.ModelId);
+        if (!string.IsNullOrWhiteSpace(q.Number)) { var num = DrawingNumberFormat.Normalize(q.Number); qy = qy.Where(d => d.DrawingNumber == num); }
         if (q.VoltageV is not null) qy = qy.Where(d => d.VoltageV == q.VoltageV);
         if (q.Status is not null) qy = qy.Where(d => d.Status == q.Status);
         var desc = !string.Equals(q.Dir, "asc", StringComparison.OrdinalIgnoreCase);
