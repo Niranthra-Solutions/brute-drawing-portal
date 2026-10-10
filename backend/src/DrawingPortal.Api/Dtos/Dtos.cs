@@ -111,7 +111,7 @@ public sealed class AddRevisionDto
 }
 public sealed class DrawingListQuery
 {
-    public string? Q { get; set; } public string? CategoryId { get; set; } public string? MakeId { get; set; } public string? ModelId { get; set; } public string? Number { get; set; }
+    public string? Q { get; set; } public string? CategoryId { get; set; } public string? MakeId { get; set; } public string? ModelId { get; set; } public string? Number { get; set; } public string? FileId { get; set; }
     public int? VoltageV { get; set; } public DrawingStatus? Status { get; set; }
     public string Sort { get; set; } = "updated"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
