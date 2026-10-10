@@ -6,7 +6,12 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Layers, Pencil, Send, UploadCloud } from "lucide-react";
 import { api } from "@/lib/api";
-import type { DrawingDetail, RequestDetail, UploadedFile } from "@/lib/types";
+import type {
+  Drawing,
+  DrawingDetail,
+  RequestDetail,
+  UploadedFile,
+} from "@/lib/types";
 import { formatByMask, isValidNumber, maskHint } from "@/lib/util";
 import { optionalDim, dim } from "@/lib/schemas";
 import { useBootstrap } from "@/lib/hooks";
@@ -123,6 +128,7 @@ export default function RequestFormPage({
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [lookup, setLookup] = useState("");
   const [lookupErr, setLookupErr] = useState("");
+  const [matches, setMatches] = useState<Drawing[]>([]);
   const [err, setErr] = useState("");
   const drawingId = form.watch("drawingId");
   const make = form.watch("make");
@@ -212,10 +218,14 @@ export default function RequestFormPage({
       return;
     }
     try {
-      const r = await api.get<DrawingDetail>("/api/drawings/by-number", {
-        number: lookup,
-      });
-      form.setValue("drawingId", r.drawing.id, { shouldValidate: true });
+      const r = await api.get<{ items: Drawing[]; note: string | null }>(
+        "/api/drawings/by-number/all",
+        { number: lookup },
+      );
+      if (r.items.length === 1) {
+        setMatches([]);
+        form.setValue("drawingId", r.items[0].id, { shouldValidate: true });
+      } else setMatches(r.items); // several drawings share this number: let the user choose
     } catch (e) {
       setLookupErr(e instanceof Error ? e.message : "Not found");
     }
@@ -370,6 +380,43 @@ export default function RequestFormPage({
                     >
                       {lookupErr || form.formState.errors.drawingId?.message}
                     </p>
+                  )}
+                  {matches.length > 1 && (
+                    <div className="mt-3">
+                      <div className="mb-2 text-[13px] font-bold">
+                        {matches.length} drawings use this number - select the
+                        one to modify
+                      </div>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {matches.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() =>
+                              form.setValue("drawingId", m.id, {
+                                shouldValidate: true,
+                              })
+                            }
+                            className="rounded-xl border bg-background px-3.5 py-3 text-left transition hover:border-brand hover:bg-brand-soft/40"
+                          >
+                            <div className="font-mono text-[13px] font-bold text-brand-dark">
+                              {m.drawingNumber}
+                            </div>
+                            <div className="text-[13px] font-semibold">
+                              {m.make} {m.model}{" "}
+                              <span className="font-normal text-muted-foreground">
+                                · {m.capacity}
+                              </span>
+                            </div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              {m.category} · {m.vehicleType} · {m.ah} ·{" "}
+                              {m.voltageV} V · {m.lengthMm}×{m.widthMm}×
+                              {m.heightMm} · Rev {m.revisionLabel}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
