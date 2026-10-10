@@ -218,7 +218,7 @@ public sealed class BulkImportController(IBulkImportService bulk) : ApiBase
         File(bulk.BuildTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "drawing-import-template.xlsx");
 
     [HttpPost, EnableRateLimiting("upload"), RequestSizeLimit(15_000_000)]
-    public Task<BulkJobDto> Start(IFormFile? file, [FromForm] bool skipDuplicates = true, [FromForm] bool autoCreateMaster = false, CancellationToken ct = default) =>
+    public Task<BulkJobDto> Start(IFormFile? file, [FromForm] bool skipDuplicates = true, [FromForm] bool autoCreateMaster = true, CancellationToken ct = default) =>
         bulk.StartAsync(file ?? throw ApiException.BadRequest("Choose an Excel file.", "file"), skipDuplicates, autoCreateMaster, ct);
 
     [HttpGet] public Task<IReadOnlyList<BulkJobDto>> List(CancellationToken ct) => bulk.ListAsync(ct);

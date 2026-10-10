@@ -225,7 +225,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             {
                 fail = false;
                 if (d.TryGetValue(name, out var hit)) return hit;
-                if (!job.AutoCreateMaster) { Err(row, num, $"{label} '{name}' does not exist in master data."); fail = true; return null; }
+                if (!job.AutoCreateMaster) { Err(row, num, $"{label} '{(label == "Model" ? $"{modelN} ({capN})" : name)}' does not exist in master data. Tick \"Create missing master data\" to add it automatically."); fail = true; return null; }
                 var e = make(); d[name] = e; newMasters.Add(e); return e;
             }
             var cat = Get(m.Cats, catN, () => new VehicleCategory { Name = catN }, "Category", out var f1); if (f1) continue;
