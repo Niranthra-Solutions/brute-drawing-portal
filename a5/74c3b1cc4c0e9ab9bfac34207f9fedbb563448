@@ -1,0 +1,19 @@
+backend/src/DrawingPortal.Api/Controllers/CoreControllers.cs
+  h_51a00495fb6020 221
+frontend/src/pages/admin/bulk-import.tsx
+  h_51a00495fb6020 1-16,18,20-23,26-28,30-33,35,39,43,46-49,52-53,55,59-60,65-69,74,78,80,82-83,87
+  h_51a00495fb6020 38,42,44,58,62-64,84,88
+backend/src/DrawingPortal.Api/Services/BulkImport.cs
+  h_51a00495fb6020 228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a574c3b1cc4c0e9ab9bfac34207f9fedbb563448",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
