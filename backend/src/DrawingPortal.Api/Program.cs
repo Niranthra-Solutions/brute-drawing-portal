@@ -114,17 +114,9 @@ try
         o.MapInboundClaims = false;
         o.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidIssuer = jwt.Issuer,
-            ValidateAudience = true,
-            ValidAudience = jwt.Audience,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromSeconds(30),
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
-            RoleClaimType = "role",
-            NameClaimType = "name",
-            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ValidateIssuer = true, ValidIssuer = jwt.Issuer, ValidateAudience = true, ValidAudience = jwt.Audience, ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(30),
+            ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
+            RoleClaimType = "role", NameClaimType = "name", ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
         };
         o.Events = new JwtBearerEvents { OnMessageReceived = c => { c.Token = c.Request.Cookies[AuthController.AccessCookie]; return Task.CompletedTask; } };
     });
@@ -162,6 +154,18 @@ try
             }
             else await db.Database.MigrateAsync();
         }
+        // existing databases were created with a UNIQUE index on the drawing number; one number may now serve several makes / models
+        try
+        {
+            if (opt.Provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("DROP INDEX IF EXISTS IX_Drawings_DrawingNumber");
+                await db.Database.ExecuteSqlRawAsync("CREATE INDEX IF NOT EXISTS IX_Drawings_DrawingNumber ON Drawings (DrawingNumber)");
+            }
+            else
+                await db.Database.ExecuteSqlRawAsync("IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Drawings_DrawingNumber' AND object_id = OBJECT_ID('Drawings') AND is_unique = 1) BEGIN DROP INDEX IX_Drawings_DrawingNumber ON Drawings; CREATE INDEX IX_Drawings_DrawingNumber ON Drawings (DrawingNumber); END");
+        }
+        catch (Exception ex) { app.Logger.LogWarning(ex, "Could not relax the unique drawing-number index"); }
         await scope.ServiceProvider.GetRequiredService<DbSeeder>().SeedAsync();
         var auth = scope.ServiceProvider.GetRequiredService<IOptions<AuthOptions>>().Value;
         if (auth.TestAdmin.Enabled)

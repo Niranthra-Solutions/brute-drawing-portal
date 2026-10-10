@@ -81,29 +81,7 @@ const makeSchema = (mode: "New" | "Modification") =>
         need("connector", "Select the end connector.");
       } else {
         need("drawingId", "Choose the drawing to modify.");
-        if (v.reason.trim().length < 3)
-          ctx.addIssue({
-            code: "custom",
-            path: ["reason"],
-            message: "Give the reason for the change.",
-          });
       }
-      if (v.description.trim().length < 5)
-        ctx.addIssue({
-          code: "custom",
-          path: ["description"],
-          message:
-            mode === "New"
-              ? "Add your requirement comments."
-              : "Describe the required change.",
-        });
-      if (v.attachments.length === 0)
-        ctx.addIssue({
-          code: "custom",
-          path: ["attachments"],
-          message:
-            "Attach a reference image, drawing or video (jpg, png, pdf, dwg, mp4, mov or webm).",
-        });
     });
 type Values = z.infer<ReturnType<typeof makeSchema>>;
 
@@ -425,17 +403,6 @@ export default function RequestFormPage({
                       label: x.name,
                     }))}
                   />
-                  <FSelect
-                    control={c}
-                    name="type"
-                    label="Vehicle type"
-                    required
-                    placeholder="Select type"
-                    options={(b?.vehicleTypes ?? []).map((x) => ({
-                      value: x.name,
-                      label: x.name,
-                    }))}
-                  />
                   <FInput
                     control={c}
                     name="make"
@@ -449,6 +416,17 @@ export default function RequestFormPage({
                       <option key={m.id} value={m.name} />
                     ))}
                   </datalist>
+                  <FSelect
+                    control={c}
+                    name="type"
+                    label="Vehicle type"
+                    required
+                    placeholder="Select type"
+                    options={(b?.vehicleTypes ?? []).map((x) => ({
+                      value: x.name,
+                      label: x.name,
+                    }))}
+                  />
                   <FInput
                     control={c}
                     name="model"
@@ -591,7 +569,6 @@ export default function RequestFormPage({
               label={
                 isMod ? "Required change" : "Additional requirement comments"
               }
-              required
               maxLength={4000}
             />
             {isMod && (
@@ -600,7 +577,6 @@ export default function RequestFormPage({
                   control={c}
                   name="reason"
                   label="Reason for modification"
-                  required
                   maxLength={2000}
                 />
               </div>
@@ -608,7 +584,7 @@ export default function RequestFormPage({
           </SectionCard>
           <SectionCard
             icon={UploadCloud}
-            title="Design reference image, drawing or video *"
+            title="Design reference image, drawing or video"
           >
             {files.map((x) => (
               <div key={x.id} className="mb-3 flex items-center gap-2">

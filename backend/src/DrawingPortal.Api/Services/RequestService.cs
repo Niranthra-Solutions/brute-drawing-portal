@@ -71,21 +71,18 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
             if (dto.VoltageV is null or < 1) errs.Add("voltageV", "Voltage is required.");
             if (dto.AhValue is null or < 1) errs.Add("ahValue", "Ah rating is required.");
             Dim("lengthMm", dto.LengthMm, "Length", true); Dim("widthMm", dto.WidthMm, "Width", true); Dim("heightMm", dto.HeightMm, "Height", true);
-            if (string.IsNullOrWhiteSpace(dto.Description) || dto.Description.Trim().Length < 5) errs.Add("description", "Additional requirement comments are required.");
         }
         else
         {
             if (related is null) errs.Add("relatedDrawingId", "Select the drawing that needs to be modified.");
             Dim("lengthMm", dto.LengthMm, "Length", false); Dim("widthMm", dto.WidthMm, "Width", false); Dim("heightMm", dto.HeightMm, "Height", false);
-            if (string.IsNullOrWhiteSpace(dto.Description) || dto.Description.Trim().Length < 5) errs.Add("description", "Describe the required change.");
-            if (string.IsNullOrWhiteSpace(dto.Reason) || dto.Reason.Trim().Length < 3) errs.Add("reason", "Give the reason for the modification.");
+            // required change, reason and reference file are optional for modification requests
         }
 
         var attachIds = dto.AttachmentFileIds.Distinct().ToList();
         if (attachIds.Count > 5) errs.Add("attachmentFileIds", "You can attach up to 5 files.");
         var files = attachIds.Count == 0 ? new List<StoredFile>() : await db.Files.Where(f => attachIds.Contains(f.Id) && f.Kind == FileKind.RequestAttachment && f.UploadedById == user.Id).ToListAsync(ct);
         if (files.Count != attachIds.Count) errs.Add("attachmentFileIds", "One or more attachments are invalid. Please upload them again.");
-        if (portal.Value.RequireRequestAttachment && attachIds.Count == 0) errs.Add("attachmentFileIds", "Attach a reference image or drawing (jpg, png, pdf or dwg).");
         errs.ThrowIfAny();
 
         var ticket = await NextTicketAsync(dto.Type == RequestType.New ? "DR" : "DM", ct);
@@ -94,28 +91,12 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
             : Text.Truncate($"Modify {related!.DrawingNumber}" + (string.IsNullOrWhiteSpace(dto.ChangeType) ? "" : $" - {R(dto.ChangeType, 40)}"), 200);
         var r = new DrawingRequest
         {
-            TicketNo = ticket,
-            Type = dto.Type,
-            Priority = dto.Priority,
-            RequestedById = user.Id!,
-            Title = title,
-            RelatedDrawingId = related?.Id,
-            CategoryName = Text.NullIfEmpty(R(dto.CategoryName, 60)),
-            VehicleTypeName = Text.NullIfEmpty(R(dto.VehicleTypeName, 100)),
-            MakeName = Text.NullIfEmpty(R(dto.MakeName, 100)),
-            ModelName = Text.NullIfEmpty(R(dto.ModelName, 120)),
-            Capacity = Text.NullIfEmpty(R(dto.Capacity, 40)),
-            VoltageV = dto.VoltageV,
-            AhValue = dto.AhValue,
-            AhStandard = Text.NullIfEmpty(R(dto.AhStandard, 20))?.ToUpperInvariant(),
-            LengthMm = dto.LengthMm,
-            WidthMm = dto.WidthMm,
-            HeightMm = dto.HeightMm,
-            ConnectorName = Text.NullIfEmpty(R(dto.ConnectorName, 100)),
-            ChangeType = Text.NullIfEmpty(R(dto.ChangeType, 40)),
-            TargetDateUtc = dto.TargetDate?.ToUniversalTime(),
-            Description = Text.CleanMultiline(dto.Description, 4000),
-            Reason = Text.NullIfEmpty(Text.CleanMultiline(dto.Reason, 2000)),
+            TicketNo = ticket, Type = dto.Type, Priority = dto.Priority, RequestedById = user.Id!, Title = title, RelatedDrawingId = related?.Id,
+            CategoryName = Text.NullIfEmpty(R(dto.CategoryName, 60)), VehicleTypeName = Text.NullIfEmpty(R(dto.VehicleTypeName, 100)), MakeName = Text.NullIfEmpty(R(dto.MakeName, 100)),
+            ModelName = Text.NullIfEmpty(R(dto.ModelName, 120)), Capacity = Text.NullIfEmpty(R(dto.Capacity, 40)), VoltageV = dto.VoltageV, AhValue = dto.AhValue,
+            AhStandard = Text.NullIfEmpty(R(dto.AhStandard, 20))?.ToUpperInvariant(), LengthMm = dto.LengthMm, WidthMm = dto.WidthMm, HeightMm = dto.HeightMm,
+            ConnectorName = Text.NullIfEmpty(R(dto.ConnectorName, 100)), ChangeType = Text.NullIfEmpty(R(dto.ChangeType, 40)),
+            TargetDateUtc = dto.TargetDate?.ToUniversalTime(), Description = Text.CleanMultiline(dto.Description, 4000), Reason = Text.NullIfEmpty(Text.CleanMultiline(dto.Reason, 2000)),
         };
         db.Requests.Add(r);
         foreach (var f in files) db.RequestAttachments.Add(new RequestAttachment { RequestId = r.Id, FileId = f.Id });
@@ -171,18 +152,8 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
         var total = await qy.CountAsync(ct);
         var rows = await ordered.ThenBy(r => r.Id).Skip((page - 1) * size).Take(size).Select(r => new
         {
-            r.Id,
-            r.TicketNo,
-            r.Type,
-            r.Status,
-            r.Priority,
-            r.Title,
-            Name = r.RequestedBy!.FullName,
-            Email = r.RequestedBy.Email,
-            Assignee = r.AssignedTo == null ? null : r.AssignedTo.FullName,
-            Drawing = r.RelatedDrawing == null ? null : r.RelatedDrawing.DrawingNumber,
-            r.SubmittedAtUtc,
-            r.UpdatedAtUtc
+            r.Id, r.TicketNo, r.Type, r.Status, r.Priority, r.Title, Name = r.RequestedBy!.FullName, Email = r.RequestedBy.Email,
+            Assignee = r.AssignedTo == null ? null : r.AssignedTo.FullName, Drawing = r.RelatedDrawing == null ? null : r.RelatedDrawing.DrawingNumber, r.SubmittedAtUtc, r.UpdatedAtUtc
         }).ToListAsync(ct);
         return new PagedResult<RequestListItemDto>(rows.Select(r => new RequestListItemDto(r.Id, r.TicketNo, r.Type.ToString(), r.Status.ToString(), r.Priority.ToString(), r.Title, r.Name, r.Email, r.Assignee, r.Drawing, r.SubmittedAtUtc, r.UpdatedAtUtc)).ToList(), total, page, size);
     }

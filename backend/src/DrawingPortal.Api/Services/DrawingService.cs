@@ -88,8 +88,9 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (!s.Format.IsMatch(n)) throw ApiException.BadRequest($"Enter the drawing number in the format {s.Format.Mask.Replace("#", "9")} (for example {s.Format.Example}).", "number");
         var q = db.Drawings.AsNoTracking();
         if (!user.IsAdmin) q = q.Where(d => d.Status == DrawingStatus.Active);
-        var id = await q.Where(d => d.DrawingNumber == n).Select(d => d.Id).FirstOrDefaultAsync(ct);
-        string? note = null;
+        var ids = await q.Where(d => d.DrawingNumber == n).OrderBy(d => d.Model!.Make!.Name).Select(d => d.Id).Take(50).ToListAsync(ct);
+        var id = ids.FirstOrDefault();
+        string? note = ids.Count > 1 ? $"{n} is used by {ids.Count} drawings (different makes / models). Showing the first - use Drawing search to see the others." : null;
         if (id is null)
         {
             // An older (superseded) number from a previous revision still resolves to the current drawing.
@@ -168,7 +169,14 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
     {
         var n = DrawingNumberFormat.Normalize(d.DrawingNumber);
         if (!s.Format.IsMatch(n)) errs.Add("drawingNumber", $"Drawing number must match the format {s.Format.Mask} (example: {s.Format.Example}).");
-        else if (await db.Drawings.AnyAsync(x => x.DrawingNumber == n && x.Id != excludeId, ct)) errs.Add("drawingNumber", $"Drawing number {n} already exists.");
+        else
+        {
+            // the same number may be used for many makes / models, and one vehicle may have many drawings;
+            // only an exact repeat (same number, model, voltage and Ah) is refused
+            var std = Text.Clean(d.AhStandard, 20).ToUpperInvariant();
+            if (await db.Drawings.AnyAsync(x => x.DrawingNumber == n && x.ModelId == d.ModelId && x.VoltageV == d.VoltageV && x.AhValue == d.AhValue && x.AhStandard == std && x.Id != excludeId, ct))
+                errs.Add("drawingNumber", $"Drawing {n} already exists for this vehicle model, voltage and Ah rating.");
+        }
         if (d.VoltageV is < 1 or > 2000) errs.Add("voltageV", "Enter a valid voltage.");
         if (d.AhValue is < 1 or > 100000) errs.Add("ahValue", "Enter a valid Ah rating.");
         ValidateDims(errs, d.LengthMm, d.WidthMm, d.HeightMm, "");
@@ -203,33 +211,15 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
 
         var d = new Drawing
         {
-            DrawingNumber = DrawingNumberFormat.Normalize(dto.DrawingNumber),
-            ModelId = dto.ModelId,
-            VoltageV = dto.VoltageV,
-            AhValue = dto.AhValue,
-            AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant(),
-            LengthMm = dto.LengthMm,
-            WidthMm = dto.WidthMm,
-            HeightMm = dto.HeightMm,
-            ConnectorTypeId = dto.ConnectorTypeId,
-            Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)),
+            DrawingNumber = DrawingNumberFormat.Normalize(dto.DrawingNumber), ModelId = dto.ModelId, VoltageV = dto.VoltageV, AhValue = dto.AhValue,
+            AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant(), LengthMm = dto.LengthMm, WidthMm = dto.WidthMm, HeightMm = dto.HeightMm,
+            ConnectorTypeId = dto.ConnectorTypeId, Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)),
             CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(dto.CompetitorDrawingNumber, 60)),
-            CurrentRevisionNo = 1,
-            CurrentFileId = file!.Id,
-            CreatedById = user.Id,
+            CurrentRevisionNo = 1, CurrentFileId = file!.Id, CreatedById = user.Id,
         };
         db.Drawings.Add(d);
-        var rev = new DrawingRevision
-        {
-            DrawingId = d.Id,
-            RevisionNo = 1,
-            DrawingNumber = d.DrawingNumber,
-            FileId = file.Id,
-            CreatedById = user.Id,
-            RequestId = dto.RequestId,
-            ChangeNotes = Text.NullIfEmpty(Text.CleanMultiline(dto.ChangeNotes, 2000)) ?? "Initial release",
-            SnapshotJson = Snapshot(d)
-        };
+        var rev = new DrawingRevision { DrawingId = d.Id, RevisionNo = 1, DrawingNumber = d.DrawingNumber, FileId = file.Id, CreatedById = user.Id, RequestId = dto.RequestId,
+            ChangeNotes = Text.NullIfEmpty(Text.CleanMultiline(dto.ChangeNotes, 2000)) ?? "Initial release", SnapshotJson = Snapshot(d) };
         db.Revisions.Add(rev);
         if (!string.IsNullOrEmpty(dto.RequestId)) await workflow.CompleteWithDrawingAsync(dto.RequestId, d, ct);
         audit.Add("DrawingCreated", "Drawing", d.Id, $"Created drawing {d.DrawingNumber}", new { d.DrawingNumber, file = file.Id, dto.RequestId });
@@ -282,7 +272,6 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (newNumber != d.DrawingNumber)
         {
             if (!s.Format.IsMatch(newNumber)) errs.Add("newDrawingNumber", $"Drawing number must match the format {s.Format.Mask} (example: {s.Format.Example}).");
-            else if (await db.Drawings.AnyAsync(x => x.DrawingNumber == newNumber && x.Id != id, ct)) errs.Add("newDrawingNumber", $"Drawing number {newNumber} already exists.");
         }
         if (dto.ModelId is not null && !await db.Models.AnyAsync(m => m.Id == dto.ModelId, ct)) errs.Add("modelId", "Select a valid vehicle model.");
         if (dto.ConnectorTypeId is not null && !db.Connectors.Local.Any(c => c.Id == dto.ConnectorTypeId) && !await db.Connectors.AnyAsync(c => c.Id == dto.ConnectorTypeId, ct)) errs.Add("connectorTypeId", "Select a valid connector type.");
@@ -294,17 +283,8 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (dto.AhStandard is not null) d.AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant();
         d.LengthMm = dto.LengthMm ?? d.LengthMm; d.WidthMm = dto.WidthMm ?? d.WidthMm; d.HeightMm = dto.HeightMm ?? d.HeightMm; d.ConnectorTypeId = dto.ConnectorTypeId ?? d.ConnectorTypeId;
         var last = await db.Revisions.Where(r => r.DrawingId == id).Select(r => (int?)r.RevisionNo).MaxAsync(ct) ?? 0;
-        var rev = new DrawingRevision
-        {
-            DrawingId = id,
-            RevisionNo = last + 1,
-            DrawingNumber = d.DrawingNumber,
-            FileId = file!.Id,
-            CreatedById = user.Id,
-            RequestId = dto.RequestId,
-            ChangeNotes = Text.CleanMultiline(dto.ChangeNotes, 2000),
-            SnapshotJson = Snapshot(d)
-        };
+        var rev = new DrawingRevision { DrawingId = id, RevisionNo = last + 1, DrawingNumber = d.DrawingNumber, FileId = file!.Id, CreatedById = user.Id, RequestId = dto.RequestId,
+            ChangeNotes = Text.CleanMultiline(dto.ChangeNotes, 2000), SnapshotJson = Snapshot(d) };
         db.Revisions.Add(rev);
         d.CurrentRevisionNo = rev.RevisionNo; d.CurrentFileId = file.Id; d.UpdatedAtUtc = DateTime.UtcNow; d.Status = DrawingStatus.Active;
         if (!string.IsNullOrEmpty(dto.RequestId)) await workflow.CompleteWithDrawingAsync(dto.RequestId, d, ct);
@@ -325,6 +305,6 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
     private async Task SaveAsync(CancellationToken ct)
     {
         try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException) { throw ApiException.Conflict("The drawing was changed by someone else or the drawing number already exists. Please refresh and try again."); }
+        catch (DbUpdateException) { throw ApiException.Conflict("The drawing was changed by someone else. Please refresh and try again."); }
     }
 }

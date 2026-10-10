@@ -82,7 +82,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             new() { ["Column"] = "Voltage", ["Rule"] = "Number in volts, for example 48." },
             new() { ["Column"] = "AhRating", ["Rule"] = "Number, optionally followed by a standard in brackets: 560 or 620(DIN)." },
             new() { ["Column"] = "Length / Width / Height", ["Rule"] = "Tray dimensions in mm, 3 or 4 digits." },
-            new() { ["Column"] = "DrawingUrl", ["Rule"] = "The URL shown after uploading the file on the 'Upload drawing' screen. Required. The same URL may be used on several rows when one drawing file covers several drawings." },
+            new() { ["Column"] = "DrawingUrl", ["Rule"] = "The URL shown after uploading the file on the 'Upload drawing' screen. Required. The same URL and the same drawing number may be used on several rows (different makes or models) when one drawing file covers several drawings." },
         };
         using var ms = new MemoryStream();
         MiniExcel.SaveAs(ms, new Dictionary<string, object> { ["Drawings"] = sample, ["Instructions"] = help });
@@ -117,22 +117,12 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
 
     private static string Canon(string key) => new string(key.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant() switch
     {
-        "drawingno" or "drawingnumber" => "number",
-        "category" or "vehiclecategory" => "cat",
-        "make" or "vehiclemake" or "oem" => "make",
-        "type" or "vehicletype" => "type",
-        "model" or "modelno" or "vehiclemodel" => "model",
-        "capacity" or "vehiclecapacity" => "cap",
-        "voltage" or "voltagev" or "volts" => "volt",
-        "ah" or "ahrating" => "ah",
-        "connector" or "endconnector" or "sockettype" or "connectortype" => "conn",
-        "length" or "lengthmm" or "l" => "len",
-        "width" or "widthmm" or "w" => "wid",
-        "height" or "heightmm" or "h" => "hei",
-        "comments" or "comment" => "comments",
-        "competitordrawingnumber" or "competitordrawingno" => "competitor",
-        "drawingurl" or "url" or "fileurl" or "drawingbucketurl" or "bucketurl" => "url",
-        var other => other
+        "drawingno" or "drawingnumber" => "number", "category" or "vehiclecategory" => "cat", "make" or "vehiclemake" or "oem" => "make",
+        "type" or "vehicletype" => "type", "model" or "modelno" or "vehiclemodel" => "model", "capacity" or "vehiclecapacity" => "cap",
+        "voltage" or "voltagev" or "volts" => "volt", "ah" or "ahrating" => "ah", "connector" or "endconnector" or "sockettype" or "connectortype" => "conn",
+        "length" or "lengthmm" or "l" => "len", "width" or "widthmm" or "w" => "wid", "height" or "heightmm" or "h" => "hei",
+        "comments" or "comment" => "comments", "competitordrawingnumber" or "competitordrawingno" => "competitor",
+        "drawingurl" or "url" or "fileurl" or "drawingbucketurl" or "bucketurl" => "url", var other => other
     };
 
     private static string S(IDictionary<string, string?> d, string k) => d.TryGetValue(k, out var v) ? (v ?? "").Trim() : "";
@@ -157,7 +147,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             job.TotalRows = total; await db.SaveChangesAsync(ct);
 
             var masters = await LoadMastersAsync(ct);
-            var existing = (await db.Drawings.IgnoreQueryFilters().AsNoTracking().Select(d => d.DrawingNumber).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var existing = (await db.Drawings.AsNoTracking().Select(d => new { d.DrawingNumber, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard }).ToListAsync(ct)).Select(d => Key(d.DrawingNumber, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard)).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var batch = new List<(int Row, Dictionary<string, string?> Cells)>();
             var rowNo = 1;
             foreach (var item in MiniExcel.Query(job.TempPath, useHeaderRow: true))
@@ -193,6 +183,8 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
         await db.SaveChangesAsync(CancellationToken.None);
     }
 
+    private static string Key(string num, string modelId, int volt, int ah, string? std) => $"{num}|{modelId}|{volt}|{ah}|{std ?? ""}";
+
     private async Task<Masters> ProcessBatchAsync(BulkImportJob job, List<(int Row, Dictionary<string, string?> Cells)> rows, Masters m,
         HashSet<string> existing, DrawingSettings s, CancellationToken ct)
     {
@@ -213,11 +205,6 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             var num = DrawingNumberFormat.Normalize(S(c, "number"));
             if (num.Length == 0) { Err(row, null, "DrawingNumber is empty."); continue; }
             if (!s.Format.IsMatch(num)) { Err(row, num, $"Drawing number does not match the format {s.Format.Mask} (example {s.Format.Example})."); continue; }
-            if (existing.Contains(num) || seen.Contains(num))
-            {
-                if (job.SkipDuplicates) { skipped++; continue; }
-                Err(row, num, existing.Contains(num) ? "Drawing number already exists." : "Duplicate drawing number inside the file."); continue;
-            }
             string catN = Text.Clean(S(c, "cat"), 60), makeN = Text.Clean(S(c, "make"), 100), typeN = Text.Clean(S(c, "type"), 100), modelN = Text.Clean(S(c, "model"), 120),
                    capN = Text.Clean(S(c, "cap"), 40), connN = Text.Clean(S(c, "conn"), 100);
             var missing = new[] { ("Category", catN), ("Make", makeN), ("VehicleType", typeN), ("Model", modelN), ("Capacity", capN), ("Connector", connN) }.Where(x => x.Item2.Length == 0).Select(x => x.Item1).ToList();
@@ -250,24 +237,20 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             if (!m.Volts.Contains(volt)) { if (!job.AutoCreateMaster) { Err(row, num, $"Voltage {volt} V is not in master data."); continue; } m.Volts.Add(volt); newMasters.Add(new VoltagePreset { ValueV = volt }); }
             if (!m.Ahs.Contains((ah, std))) { if (!job.AutoCreateMaster) { Err(row, num, $"Ah rating {DrawingMapper.AhLabel(ah, std)} is not in master data."); continue; } m.Ahs.Add((ah, std)); newMasters.Add(new AhRating { Value = ah, Standard = std }); }
 
+            // same number for several makes / models, and several drawings for one vehicle, are fine; only an exact repeat is a duplicate
+            var dupKey = Key(num, model!.Id, volt, ah, std);
+            if (existing.Contains(dupKey) || seen.Contains(dupKey))
+            {
+                if (job.SkipDuplicates) { skipped++; continue; }
+                Err(row, num, existing.Contains(dupKey) ? "This drawing number already exists for the same model, voltage and Ah rating." : "Same drawing number, model, voltage and Ah repeated inside the file."); continue;
+            }
             var d = new Drawing
             {
-                DrawingNumber = num,
-                ModelId = model!.Id,
-                VoltageV = volt,
-                AhValue = ah,
-                AhStandard = std,
-                LengthMm = len,
-                WidthMm = wid,
-                HeightMm = hei,
-                ConnectorTypeId = conn!.Id,
-                Comments = Text.NullIfEmpty(Text.CleanMultiline(S(c, "comments"), 2000)),
-                CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(S(c, "competitor"), 60)),
-                CurrentRevisionNo = 1,
-                CurrentFileId = file.Id,
-                CreatedById = job.RequestedById,
+                DrawingNumber = num, ModelId = model!.Id, VoltageV = volt, AhValue = ah, AhStandard = std, LengthMm = len, WidthMm = wid, HeightMm = hei, ConnectorTypeId = conn!.Id,
+                Comments = Text.NullIfEmpty(Text.CleanMultiline(S(c, "comments"), 2000)), CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(S(c, "competitor"), 60)),
+                CurrentRevisionNo = 1, CurrentFileId = file.Id, CreatedById = job.RequestedById,
             };
-            newDrawings.Add(d); seen.Add(num);
+            newDrawings.Add(d); seen.Add(dupKey);
             newRevs.Add(new DrawingRevision { DrawingId = d.Id, RevisionNo = 1, DrawingNumber = num, FileId = file.Id, ChangeNotes = "Imported from Excel", CreatedById = job.RequestedById });
             created++;
         }
@@ -278,7 +261,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             db.Drawings.AddRange(newDrawings); db.Revisions.AddRange(newRevs); db.BulkErrors.AddRange(errors);
             job.CreatedCount += created; job.SkippedCount += skipped;
             await db.SaveChangesAsync(ct);
-            foreach (var d in newDrawings) existing.Add(d.DrawingNumber);
+            foreach (var d in newDrawings) existing.Add(Key(d.DrawingNumber, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard));
             if (newMasters.Count > 0) versions.Bump();
         }
         catch (DbUpdateException ex)
@@ -286,7 +269,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             log.LogError(ex, "Bulk batch failed");
             db.ChangeTracker.Clear();
             job.CreatedCount -= created; job.SkippedCount -= skipped;
-            job.ErrorCount += created;
+            job.ErrorCount += created; 
             db.Attach(job).State = EntityState.Modified;
             db.BulkErrors.Add(new BulkImportRowError { JobId = job.Id, RowNumber = rows[0].Row, Message = $"A database error rejected rows {rows[0].Row}-{rows[^1].Row}: {Text.Truncate(ex.GetBaseException().Message, 300)}" });
             await db.SaveChangesAsync(ct);

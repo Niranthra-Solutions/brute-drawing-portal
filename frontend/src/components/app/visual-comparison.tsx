@@ -1,15 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, ExternalLink, FileText, Maximize2 } from "lucide-react";
-import { api } from "@/lib/api";
-import type {
-  Drawing,
-  DrawingDetail,
-  RequestDetail,
-  Revision,
-} from "@/lib/types";
+import type { Drawing, RequestDetail } from "@/lib/types";
 import { fileUrl } from "@/lib/util";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,71 +44,6 @@ const drawingItem = (d: Drawing, caption: string): Item => ({
   caption: `${caption} · ${d.drawingNumber}`,
   to: `/drawings/${d.id}`,
 });
-
-/** Builds the two panes from the request: CURRENT drawing vs requested MARKUP, which becomes the REVISED drawing once Engineering completes it. */
-export function buildPanes(
-  r: RequestDetail,
-  before?: Revision,
-): [Pane, Pane] | null {
-  const marks: Item[] = r.attachments.map((a) => ({
-    key: "a-" + a.fileId,
-    fileId: a.fileId,
-    name: a.name,
-    canPreview: a.canPreview,
-    caption: a.name,
-  }));
-  const base = r.relatedDrawing;
-  if (!base && !r.resultDrawing) return null;
-  const left: Pane =
-    base && before
-      ? {
-          badge: `BEFORE: REV ${before.label}`,
-          tone: "grey",
-          items: [
-            {
-              key: "rev-" + before.id,
-              fileId: before.fileId,
-              name: before.fileName ?? before.drawingNumber,
-              canPreview: /\.(pdf|png|jpe?g)$/i.test(before.fileName ?? ""),
-              caption: `Rev ${before.label} · ${before.drawingNumber}`,
-              to: `/drawings/${base.id}`,
-            },
-          ],
-          placeholder: "Previous drawing render",
-        }
-      : base
-        ? {
-            badge: `CURRENT: REV ${base.revisionLabel}`,
-            tone: "grey",
-            items: [drawingItem(base, `Rev ${base.revisionLabel}`)],
-            placeholder: "Current drawing render",
-          }
-        : {
-            badge: "REFERENCE",
-            tone: "grey",
-            items: marks,
-            placeholder: "Requester reference",
-          };
-  const revised = r.resultDrawing
-    ? [drawingItem(r.resultDrawing, `Rev ${r.resultDrawing.revisionLabel}`)]
-    : [];
-  const right: Pane = r.resultDrawing
-    ? {
-        badge: `REVISED: REV ${r.resultDrawing.revisionLabel}`,
-        tone: "green",
-        items: base ? [...revised, ...marks] : revised,
-        placeholder: "Revised drawing",
-      }
-    : {
-        badge: marks.length
-          ? `MARKUP: ${marks.length === 1 ? "RECEIVED" : marks.length + " FILES"}`
-          : "MARKUP: PENDING",
-        tone: "orange",
-        items: base ? marks : [],
-        placeholder: "Proposed markup render",
-      };
-  return [left, right];
-}
 
 function Preview({ item, className }: { item?: Item; className?: string }) {
   if (!item) return null;
@@ -258,47 +186,40 @@ function PaneView({
   );
 }
 
+/** Shows ONLY the revised / newly uploaded drawing of a completed request (the requester's reference files stay in the attachments list with View / Download). */
 export function VisualComparison({ r }: { r: RequestDetail }) {
-  // Once completed as a REVISION of the same drawing, the left panel must show the version from BEFORE that revision (not the new one).
-  const sameDrawing =
-    !!r.resultDrawing &&
-    !!r.relatedDrawing &&
-    r.resultDrawing.id === r.relatedDrawing.id;
-  const history = useQuery({
-    queryKey: ["drawing", r.relatedDrawing?.id],
-    queryFn: () =>
-      api.get<DrawingDetail>(`/api/drawings/${r.relatedDrawing!.id}`),
-    enabled: sameDrawing,
-    retry: false,
-  });
-  const before = useMemo(() => {
-    const revs = history.data?.revisions ?? [];
-    const i = revs.findIndex((x) => x.requestTicketNo === r.ticketNo);
-    return i >= 0 ? revs[i + 1] : undefined;
-  }, [history.data, r.ticketNo]);
-  const panes = useMemo(() => buildPanes(r, before), [r, before]);
+  const d = r.resultDrawing;
+  const pane = useMemo<Pane | null>(
+    () =>
+      d
+        ? {
+            badge: `${r.type === "New" ? "NEW DRAWING" : "REVISED"}: REV ${d.revisionLabel}`,
+            tone: "green",
+            items: [drawingItem(d, `Rev ${d.revisionLabel}`)],
+            placeholder: "Drawing",
+          }
+        : null,
+    [d, r.type],
+  );
   const [open, setOpen] = useState(false);
-  if (!panes) return null;
+  if (!pane) return null;
   return (
     <>
-      <SectionCard icon={Maximize2} title="Visual comparison">
-        <div className="grid gap-4 md:grid-cols-2">
-          <PaneView pane={panes[0]} onExpand={() => setOpen(true)} />
-          <PaneView pane={panes[1]} onExpand={() => setOpen(true)} />
-        </div>
+      <SectionCard
+        icon={Maximize2}
+        title={r.type === "New" ? "New drawing" : "Revised drawing"}
+      >
+        <PaneView pane={pane} onExpand={() => setOpen(true)} />
       </SectionCard>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[min(1400px,96vw)]">
           <DialogHeader>
-            <DialogTitle>Visual comparison · {r.ticketNo}</DialogTitle>
-            <DialogDescription>
-              {panes[0].badge} vs {panes[1].badge}
-            </DialogDescription>
+            <DialogTitle>
+              {pane.badge} · {r.ticketNo}
+            </DialogTitle>
+            <DialogDescription>{pane.items[0].caption}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <PaneView pane={panes[0]} big />
-            <PaneView pane={panes[1]} big />
-          </div>
+          <PaneView pane={pane} big />
         </DialogContent>
       </Dialog>
     </>

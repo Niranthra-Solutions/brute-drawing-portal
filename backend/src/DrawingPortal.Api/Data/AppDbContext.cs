@@ -113,7 +113,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Comments).HasMaxLength(2000);
             e.Property(x => x.CompetitorDrawingNumber).HasMaxLength(60);
             e.Ignore(x => x.AhLabel);
-            e.HasIndex(x => x.DrawingNumber).IsUnique().HasFilter("[IsDeleted] = 0");
+            e.HasIndex(x => x.DrawingNumber); // NOT unique: one drawing number may serve several makes / models
             // Search path: exact match + dimensional tolerance range scan
             e.HasIndex(x => new { x.VoltageV, x.LengthMm, x.WidthMm, x.HeightMm }).IncludeProperties(x => new { x.AhValue, x.ModelId, x.Status });
             e.HasIndex(x => new { x.ModelId, x.VoltageV, x.AhValue });
