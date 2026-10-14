@@ -54,7 +54,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Logo } from "./logo";
 import { PoweredBy } from "./powered-by";
 import { Spinner } from "./common";
 
