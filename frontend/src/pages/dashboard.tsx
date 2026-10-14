@@ -34,7 +34,7 @@ export default function DashboardPage() {
   const pie = [{ name: 'Open', value: r.open, c: '#4c6fd9' }, { name: 'In progress', value: r.inProgress, c: '#e06a2c' }, { name: 'Completed', value: r.completed, c: '#5fa850' }, { name: 'Rejected', value: r.rejected, c: '#d8432f' }].filter(x => x.value > 0)
   return (
     <>
-      <PageHeader eyebrow={admin ? 'Application Engineering' : 'Marketing'} title={`Welcome back, ${user?.fullName.split(' ')[0]}`} sub={admin ? 'Manage drawings, respond to requests and keep master data current.' : 'Find the right battery tray drawing in seconds, or raise a request if it does not exist yet.'} />
+      <PageHeader eyebrow={admin ? 'Admin' : 'User'} title={`Welcome back, ${user?.fullName.split(' ')[0]}`} sub={admin ? 'Manage drawings, respond to requests and keep master data current.' : 'Find the right battery tray drawing in seconds, or raise a request if it does not exist yet.'} />
       <motion.div variants={container} initial="hidden" animate="show">
         <div className="mb-6 grid gap-4 md:grid-cols-2">
           {([['/search', Search, 'Drawing search', 'Search by vehicle, battery and tray dimensions. Get the exact drawing or the closest standard alternatives.'], ['/search-by-number', Hash, 'Search by drawing number', 'Know the number already? Jump straight to the drawing and its revision history.']] as const).map(([to, Icon, title, text]) => (

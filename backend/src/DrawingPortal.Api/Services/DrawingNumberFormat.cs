@@ -26,13 +26,13 @@ public sealed class DrawingNumberFormat
         mask = mask?.Trim() ?? "";
         if (mask.Length is < 3 or > 40) { error = "Mask must be 3 to 40 characters."; return false; }
         var pattern = new StringBuilder("^");
-        var example = new StringBuilder();
+        var example = new StringBuilder(); var sampleDigits = "25600001"; var di = 0;
         var tokens = 0;
         foreach (var c in mask)
         {
             switch (c)
             {
-                case '#': pattern.Append("[0-9]"); example.Append('1'); tokens++; break;
+                case '#': pattern.Append("[0-9]"); example.Append(sampleDigits[di++ % sampleDigits.Length]); tokens++; break;
                 case 'A': pattern.Append("[A-Z]"); example.Append('A'); tokens++; break;
                 case 'X': pattern.Append("[A-Z0-9]"); example.Append('X'); tokens++; break;
                 default:
