@@ -1,0 +1,15 @@
+frontend/src/pages/number-search.tsx
+  h_51a00495fb6020 1-18,21-30,36,38,43-44,46-47,50,52-54,61
+  h_51a00495fb6020 33,37,39,55-56,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1988ac455431d5ed40560fd27de8eafd6a4c9327",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
