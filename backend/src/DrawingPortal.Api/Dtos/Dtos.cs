@@ -63,7 +63,7 @@ public sealed record NumberMatchesDto(IReadOnlyList<DrawingDto> Items, string? N
 public sealed record SearchResultDto(string Mode, IReadOnlyList<DrawingDto> Exact, IReadOnlyList<SuggestionDto> Similar, ToleranceDto Tolerance, string? Note, int TotalCandidates);
 public sealed record RevisionDto(string Id, int RevisionNo, string Label, string DrawingNumber, string? FileId, string? FileName, string? ChangeNotes, DateTime CreatedAtUtc, string? CreatedByName, string? RequestTicketNo, bool IsCurrent);
 public sealed record FileInfoDto(string Id, string Name, string ContentType, long SizeBytes, string Sha256, string Url, DateTime CreatedAtUtc, bool CanPreview);
-public sealed record DrawingDetailDto(DrawingDto Drawing, IReadOnlyList<RevisionDto> Revisions, FileInfoDto? File, DateTime CreatedAtUtc, string? CreatedByName, string? MatchedNote);
+public sealed record DrawingDetailDto(DrawingDto Drawing, IReadOnlyList<RevisionDto> Revisions, FileInfoDto? File, DateTime CreatedAtUtc, string? CreatedByName, string? MatchedNote, IReadOnlyList<DrawingDto>? Lineage = null);
 
 public class DrawingInput
 {

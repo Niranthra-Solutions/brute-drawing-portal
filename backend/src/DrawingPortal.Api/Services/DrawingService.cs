@@ -139,7 +139,8 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
             var f = await db.Files.AsNoTracking().FirstOrDefaultAsync(x => x.Id == row.FileId, ct);
             if (f is not null) file = new FileInfoDto(f.Id, f.OriginalName, f.ContentType, f.SizeBytes, f.Sha256, f.Url, f.CreatedAtUtc, DrawingMapper.IsPreviewable(f.OriginalName));
         }
-        return new DrawingDetailDto(DrawingMapper.ToDto(row), revisions, file, meta.CreatedAtUtc, meta.CreatedById is not null && names.TryGetValue(meta.CreatedById, out var cn) ? cn : null, null);
+        var lineage = await LineageAsync(row.DrawingNumber, row.ModelId, ct);
+        return new DrawingDetailDto(DrawingMapper.ToDto(row), revisions, file, meta.CreatedAtUtc, meta.CreatedById is not null && names.TryGetValue(meta.CreatedById, out var cn) ? cn : null, null, lineage);
     }
 
     public async Task<PagedResult<DrawingDto>> ListAsync(DrawingListQuery q, CancellationToken ct)
@@ -277,39 +278,75 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         return await GetAsync(id, ct);
     }
 
+    // ---- revisions are separate drawings: 25 600 028 A -> 25 600 028 B -> 25 600 028 C, all kept, all linked to the same vehicle model
+    /// <summary>"25 600 028 A" -> "25 600 028 " (the number without its revision letter), or null when the number does not end in a letter.</summary>
+    private static string? RevisionPrefix(string number) => number.Length > 2 && char.IsLetter(number[^1]) && number[^2] == ' ' ? number[..^1] : null;
+
+    private async Task<List<DrawingRow>> LineageRowsAsync(string number, string modelId, CancellationToken ct)
+    {
+        var prefix = RevisionPrefix(number);
+        if (prefix is null) return [];
+        var len = prefix.Length + 1;
+        var q = db.Drawings.AsNoTracking().Where(d => d.ModelId == modelId && d.DrawingNumber.StartsWith(prefix) && d.DrawingNumber.Length == len);
+        if (!user.IsAdmin) q = q.Where(d => d.Status == DrawingStatus.Active);
+        return await q.OrderBy(d => d.DrawingNumber).Select(DrawingMapper.Row).ToListAsync(ct);
+    }
+
+    private async Task<IReadOnlyList<DrawingDto>?> LineageAsync(string number, string modelId, CancellationToken ct)
+    {
+        var rows = await LineageRowsAsync(number, modelId, ct);
+        return rows.Count > 1 ? rows.Select(DrawingMapper.ToDto).ToList() : null;
+    }
+
+    /// <summary>Creates the NEXT revision of a drawing as a new drawing (next letter), leaving every earlier revision untouched and available.</summary>
     public async Task<DrawingDetailDto> AddRevisionAsync(string id, AddRevisionDto dto, CancellationToken ct)
     {
-        var d = await db.Drawings.FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw ApiException.NotFound("Drawing not found.");
+        var src = await db.Drawings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw ApiException.NotFound("Drawing not found.");
         var s = await settings.GetAsync(ct);
         var errs = new FieldErrors();
         var file = await db.Files.FirstOrDefaultAsync(f => f.Id == dto.FileId && f.Kind == FileKind.Drawing, ct);
         if (file is null) errs.Add("fileId", "Upload the revised drawing file first.");
 
         dto.ConnectorTypeId = await ResolveConnectorAsync(dto.ConnectorTypeId, dto.ConnectorName, errs, ct);
-        var newNumber = string.IsNullOrWhiteSpace(dto.NewDrawingNumber) ? d.DrawingNumber : DrawingNumberFormat.Normalize(dto.NewDrawingNumber);
-        if (newNumber != d.DrawingNumber)
+        var modelId = dto.ModelId ?? src.ModelId;
+        var family = await LineageRowsAsync(src.DrawingNumber, src.ModelId, ct);
+        string newNumber;
+        if (string.IsNullOrWhiteSpace(dto.NewDrawingNumber))
+        {
+            var prefix = RevisionPrefix(src.DrawingNumber);
+            var last = family.Select(r => r.DrawingNumber[^1]).Append(src.DrawingNumber[^1]).Max();
+            newNumber = prefix is not null && last < 'Z' ? prefix + (char)(last + 1) : "";
+            if (newNumber.Length == 0) errs.Add("newDrawingNumber", "Enter the drawing number for the revised drawing.");
+        }
+        else newNumber = DrawingNumberFormat.Normalize(dto.NewDrawingNumber);
+        if (newNumber.Length > 0)
         {
             if (!s.Format.IsMatch(newNumber)) errs.Add("newDrawingNumber", $"Drawing number must match the format {s.Format.Mask} (example: {s.Format.Example}).");
+            else if (await db.Drawings.AnyAsync(x => x.DrawingNumber == newNumber && x.ModelId == modelId, ct)) errs.Add("newDrawingNumber", $"Drawing {newNumber} already exists for this vehicle. Use the next free revision letter.");
         }
         if (dto.ModelId is not null && !await db.Models.AnyAsync(m => m.Id == dto.ModelId, ct)) errs.Add("modelId", "Select a valid vehicle model.");
         if (dto.ConnectorTypeId is not null && !db.Connectors.Local.Any(c => c.Id == dto.ConnectorTypeId) && !await db.Connectors.AnyAsync(c => c.Id == dto.ConnectorTypeId, ct)) errs.Add("connectorTypeId", "Select a valid connector type.");
-        ValidateDims(errs, dto.LengthMm ?? d.LengthMm, dto.WidthMm ?? d.WidthMm, dto.HeightMm ?? d.HeightMm, "");
+        ValidateDims(errs, dto.LengthMm ?? src.LengthMm, dto.WidthMm ?? src.WidthMm, dto.HeightMm ?? src.HeightMm, "");
         errs.ThrowIfAny();
 
-        var before = Snapshot(d);
-        d.DrawingNumber = newNumber; d.ModelId = dto.ModelId ?? d.ModelId; d.VoltageV = dto.VoltageV ?? d.VoltageV; d.AhValue = dto.AhValue ?? d.AhValue;
-        if (dto.AhStandard is not null) d.AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant();
-        d.LengthMm = dto.LengthMm ?? d.LengthMm; d.WidthMm = dto.WidthMm ?? d.WidthMm; d.HeightMm = dto.HeightMm ?? d.HeightMm; d.ConnectorTypeId = dto.ConnectorTypeId ?? d.ConnectorTypeId;
-        var last = await db.Revisions.Where(r => r.DrawingId == id).Select(r => (int?)r.RevisionNo).MaxAsync(ct) ?? 0;
-        var rev = new DrawingRevision { DrawingId = id, RevisionNo = last + 1, DrawingNumber = d.DrawingNumber, FileId = file!.Id, CreatedById = user.Id, RequestId = dto.RequestId,
+        var position = Math.Max(family.Count, 1) + 1;   // A=1, B=2, C=3 ... shown as the revision label
+        var d = new Drawing
+        {
+            DrawingNumber = newNumber, ModelId = modelId, VoltageV = dto.VoltageV ?? src.VoltageV, AhValue = dto.AhValue ?? src.AhValue,
+            AhStandard = dto.AhStandard is not null ? Text.Clean(dto.AhStandard, 20).ToUpperInvariant() : src.AhStandard,
+            LengthMm = dto.LengthMm ?? src.LengthMm, WidthMm = dto.WidthMm ?? src.WidthMm, HeightMm = dto.HeightMm ?? src.HeightMm,
+            ConnectorTypeId = dto.ConnectorTypeId ?? src.ConnectorTypeId, Comments = src.Comments, CompetitorDrawingNumber = src.CompetitorDrawingNumber,
+            CurrentRevisionNo = position, CurrentFileId = file!.Id, CreatedById = user.Id,
+        };
+        db.Drawings.Add(d);
+        var rev = new DrawingRevision { DrawingId = d.Id, RevisionNo = position, DrawingNumber = d.DrawingNumber, FileId = file.Id, CreatedById = user.Id, RequestId = dto.RequestId,
             ChangeNotes = Text.CleanMultiline(dto.ChangeNotes, 2000), SnapshotJson = Snapshot(d) };
         db.Revisions.Add(rev);
-        d.CurrentRevisionNo = rev.RevisionNo; d.CurrentFileId = file.Id; d.UpdatedAtUtc = DateTime.UtcNow; d.Status = DrawingStatus.Active;
         if (!string.IsNullOrEmpty(dto.RequestId)) await workflow.CompleteWithDrawingAsync(dto.RequestId, d, ct);
-        audit.Add("RevisionAdded", "Drawing", d.Id, $"Revision {Text.RevisionLabel(rev.RevisionNo)} added to {d.DrawingNumber}",
-            new { revision = rev.RevisionNo, before = JsonDocument.Parse(before).RootElement, after = JsonDocument.Parse(rev.SnapshotJson!).RootElement, dto.RequestId });
+        audit.Add("RevisionAdded", "Drawing", d.Id, $"Revision {Text.RevisionLabel(position)} ({d.DrawingNumber}) added after {src.DrawingNumber}",
+            new { revisionOf = src.Id, from = src.DrawingNumber, to = d.DrawingNumber, dto.RequestId });
         await SaveAsync(ct);
-        return await GetAsync(id, ct);
+        return await GetAsync(d.Id, ct);
     }
 
     public async Task DeleteAsync(string id, CancellationToken ct)
