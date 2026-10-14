@@ -59,8 +59,8 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed?: boolean; onNavigat
   return (
     <div className="flex h-full flex-col">
       <div className={cn('flex items-center gap-2.5 px-2 pb-4', collapsed && 'justify-center px-0')}>
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground"><Logo size={20} /></div>
-        {!collapsed && <div className="font-heading text-[15px] leading-tight font-bold">Drawing Portal</div>}
+        
+        {!collapsed && <div className="font-heading text-[15px] leading-tight font-bold text-center">Amaron Brute Drawing Portal</div>}
       </div>
       {!collapsed && <div className={cn('mx-2 mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold', admin ? 'bg-brand-soft text-brand-dark' : 'bg-success-soft text-[#2f6b25]')}><span className="size-1.5 rounded-full bg-current" />{admin ? 'Admin · Application Engineering' : 'User · Marketing'}</div>}
       <div className="min-h-0 flex-1 overflow-y-auto"><Nav collapsed={collapsed} onNavigate={onNavigate} /></div>
