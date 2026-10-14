@@ -79,10 +79,11 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
   const mask = b?.drawingNumberMask ?? '## ### ### A'; const example = b?.drawingNumberExample ?? ''
   const currentNo = src.data?.drawing.drawingNumber
 
+  const opt = <T extends z.ZodType<string>>(t: T) => (mode === 'revision' ? z.union([z.literal(''), t]) : t)   // revision: blank = keep the earlier revision's value
   const schema = useMemo(() => z.object({
     vehicle: z.object({ categoryId: z.string(), makeId: z.string(), typeId: z.string(), modelName: z.string(), capacity: z.string() }),   // completeness is checked on submit (the requester's vehicle may still have to be added to master data)
-    number: z.string(), volt: z.string().min(1, 'Select a voltage.'), ahId: z.string().min(1, 'Select an Ah rating.'), l: dim('Length'), w: dim('Width'), h: dim('Height'),
-    connector: z.string().trim().min(1, 'Select or type the end connector.').max(100), comments: z.string().max(2000), competitor: z.string().max(60), notes: z.string().max(2000), status: z.string(), fileId: z.string(),
+    number: z.string(), volt: z.string().min(1, 'Select a voltage.'), ahId: z.string().min(1, 'Select an Ah rating.'), l: opt(dim('Length')), w: opt(dim('Width')), h: opt(dim('Height')),
+    connector: mode === 'revision' ? z.string().trim().max(100) : z.string().trim().min(1, 'Select or type the end connector.').max(100), comments: z.string().max(2000), competitor: z.string().max(60), notes: z.string().max(2000), status: z.string(), fileId: z.string(),
   }).superRefine((v, ctx) => {
     if (mode === 'revision' && v.number === currentNo) ctx.addIssue({ code: 'custom', path: ['number'], message: `A revision is a new drawing - give it the next number, for example ${nextRevisionNumber(currentNo ?? '', src.data?.lineage) || example}.` })
     else if (!drawingNumber(mask, example).safeParse(v.number).success) ctx.addIssue({ code: 'custom', path: ['number'], message: `Use the format ${maskHint(mask)} (example ${example}).` })
@@ -156,7 +157,7 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
     }
     const ah = b.ahRatings.find(a => a.id === v.ahId)!
     const conn = b.connectors.find(x => x.name.toLowerCase() === v.connector.trim().toLowerCase())
-    const spec = { modelId: modelId2, connectorTypeId: conn?.id ?? '', connectorName: conn ? undefined : v.connector.trim(), voltageV: Number(v.volt), ahValue: ah.value, ahStandard: ah.standard, lengthMm: Number(v.l), widthMm: Number(v.w), heightMm: Number(v.h) }
+    const spec = { modelId: modelId2, connectorTypeId: conn?.id ?? (v.connector.trim() ? '' : undefined), connectorName: conn || !v.connector.trim() ? undefined : v.connector.trim(), voltageV: Number(v.volt), ahValue: ah.value, ahStandard: ah.standard, lengthMm: v.l ? Number(v.l) : undefined, widthMm: v.w ? Number(v.w) : undefined, heightMm: v.h ? Number(v.h) : undefined }
     try {
       let d: DrawingDetail
       if (mode === 'new') d = await api.post('/api/drawings', { ...spec, drawingNumber: v.number, comments: v.comments, competitorDrawingNumber: v.competitor, fileId: v.fileId, changeNotes: v.notes || undefined, requestId: requestId || undefined })
@@ -205,14 +206,14 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
               <FSelect control={control} name="volt" label="Voltage (V)" required options={b.voltages.map(v => ({ value: String(v.valueV), label: `${v.valueV} V` }))} />
               <FSelect control={control} name="ahId" label="Ah rating" required options={b.ahRatings.map(a => ({ value: a.id, label: a.label }))} />
             </div>
-            <div className="mt-5 mb-2 text-xs font-bold">Tray size (mm) <span className="text-destructive">*</span> <span className="font-normal text-muted-foreground">· 3 or 4 digits each</span></div>
+            <div className="mt-5 mb-2 text-xs font-bold">Tray size (mm){mode !== 'revision' && <> <span className="text-destructive">*</span></>} <span className="font-normal text-muted-foreground">· 3 or 4 digits each</span></div>
             <div className="grid gap-4 md:grid-cols-3">
               <FInput control={control} name="l" label="Length (L)" numeric mono maxLength={4} placeholder="e.g. 1220" />
               <FInput control={control} name="w" label="Width (W)" numeric mono maxLength={4} placeholder="e.g. 350" />
               <FInput control={control} name="h" label="Height (H)" numeric mono maxLength={4} placeholder="e.g. 780" />
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <FInput control={control} name="connector" label="End connector" required list="connector-list" maxLength={100} placeholder="Pick from the list or type your own" hint="Not in the list? Type it - it is added to master data." />
+              <FInput control={control} name="connector" label="End connector" required={mode !== 'revision'} list="connector-list" maxLength={100} placeholder="Pick from the list or type your own" hint="Not in the list? Type it - it is added to master data." />
               <datalist id="connector-list">{b.connectors.map(c => <option key={c.id} value={c.name} />)}</datalist>
               {mode === 'edit' && <FSelect control={control} name="status" label="Status" options={[{ value: 'Active', label: 'Active' }, { value: 'Archived', label: 'Archived' }]} />}
             </div>
