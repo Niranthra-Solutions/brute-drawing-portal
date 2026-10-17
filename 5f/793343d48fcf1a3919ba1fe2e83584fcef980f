@@ -1,0 +1,14 @@
+.github/workflows/ci.yml
+  h_51a00495fb6020 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5f793343d48fcf1a3919ba1fe2e83584fcef980f",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
