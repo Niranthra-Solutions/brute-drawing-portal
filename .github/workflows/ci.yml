@@ -3,7 +3,7 @@ name: Build & Deploy Drawing Portal
 on:
   push:
     branches:
-      - master
+      - v2
       - main
   workflow_dispatch:
     inputs:
