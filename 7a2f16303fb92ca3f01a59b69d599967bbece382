@@ -1,0 +1,14 @@
+Dockerfile
+  h_51a00495fb6020 71,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7a2f16303fb92ca3f01a59b69d599967bbece382",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

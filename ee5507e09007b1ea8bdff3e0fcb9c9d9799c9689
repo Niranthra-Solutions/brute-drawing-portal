@@ -1,0 +1,28 @@
+backend/src/DrawingPortal.Api/Domain/Entities.cs
+  h_51a00495fb6020 111-112
+  h_51a00495fb6020 326
+backend/src/DrawingPortal.Api/Controllers/CoreControllers.cs
+  h_51a00495fb6020 70
+  h_51a00495fb6020 100-101,216
+backend/src/DrawingPortal.Api/Services/FileStorage.cs
+  h_51a00495fb6020 1,110-124,127
+  h_51a00495fb6020 20-22,24-26,30-32,141
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 133
+  h_51a00495fb6020 46,113-114,169-170
+frontend/src/components/app/file-upload.tsx
+  h_51a00495fb6020 6,10,41-46,97-105
+frontend/src/lib/types.ts
+  h_51a00495fb6020 147-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ee5507e09007b1ea8bdff3e0fcb9c9d9799c9689",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

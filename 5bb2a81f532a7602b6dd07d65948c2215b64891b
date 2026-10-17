@@ -1,0 +1,22 @@
+backend/src/DrawingPortal.Api/Services/DrawingNumberFormat.cs
+  h_51a00495fb6020 29,35
+  h_51a00495fb6020 56
+frontend/src/components/app/shell.tsx
+  h_51a00495fb6020 62,65
+frontend/src/pages/dashboard.tsx
+  h_51a00495fb6020 37
+frontend/src/pages/admin/users.tsx
+  h_51a00495fb6020 1-18,21-23,25-31,34,36-37,39,41,44-47,49,51,56,63
+  h_51a00495fb6020 53-55,57-60,64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5bb2a81f532a7602b6dd07d65948c2215b64891b",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

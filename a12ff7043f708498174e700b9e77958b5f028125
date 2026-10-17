@@ -1,0 +1,16 @@
+frontend/src/pages/admin/drawings.tsx
+  h_51a00495fb6020 26
+frontend/src/pages/admin/master-data.tsx
+  h_51a00495fb6020 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a12ff7043f708498174e700b9e77958b5f028125",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

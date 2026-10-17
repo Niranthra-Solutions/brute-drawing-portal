@@ -1,0 +1,14 @@
+frontend/index.html
+  h_51a00495fb6020 5,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d586eabbc70f0d6ca16b375341a1fe9af341c91a",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

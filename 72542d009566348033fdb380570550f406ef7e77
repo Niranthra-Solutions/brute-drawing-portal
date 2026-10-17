@@ -1,0 +1,15 @@
+frontend/src/pages/admin/drawing-form.tsx
+  h_51a00495fb6020 29-40,43-47,53-59,167-168,171,178,191-194,197-205,209,211-223
+  h_51a00495fb6020 48-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "72542d009566348033fdb380570550f406ef7e77",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 62
+backend/src/DrawingPortal.Api/Services/BulkImport.cs
+  h_51a00495fb6020 80
+backend/src/DrawingPortal.Api/Controllers/CoreControllers.cs
+  h_51a00495fb6020 40
+frontend/src/pages/number-search.tsx
+  h_51a00495fb6020 1-18,21-29,35,42,44-46,48,50-52,54,59
+  h_51a00495fb6020 32,36-38,53,60
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 16,107-118
+  h_51a00495fb6020 119-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a4b55d560cabd39354ccb6bdb2e39998a7f7dac5",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+backend/src/DrawingPortal.Api/Services/BulkImport.cs
+  h_51a00495fb6020 85,165,167,187,249
+frontend/src/pages/admin/bulk-import.tsx
+  h_51a00495fb6020 1-16,18,20-23,26-28,30-33,35,38,42,45-48,51-52,54,58-59,64-68,73,77,79,81-82,86
+  h_51a00495fb6020 41,43,57,61-63,83,87
+backend/tests/DrawingPortal.Tests/ApiTests.cs
+  h_51a00495fb6020 370,373,375-376,378-380,382-383,385
+  h_51a00495fb6020 381
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 201,233,260
+frontend/src/pages/admin/drawings.tsx
+  h_51a00495fb6020 50-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "120c41fc9226387625ca5bf85b3511a952ad82ec",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}

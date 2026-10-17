@@ -1,0 +1,15 @@
+backend/src/DrawingPortal.Api/Security/ApiExceptionHandler.cs
+  h_51a00495fb6020 29-30
+  h_51a00495fb6020 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6e6e9801e0a51a5c7979b4a72c3c237b65e501d4",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
