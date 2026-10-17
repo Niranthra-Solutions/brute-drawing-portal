@@ -1,0 +1,382 @@
+.dockerignore
+  h_51a00495fb6020 1-11
+.github/workflows/ci.yml
+  h_51a00495fb6020 1-540
+.gitignore
+  h_51a00495fb6020 1-7
+Dockerfile
+  h_51a00495fb6020 1-69
+README.md
+  h_51a00495fb6020 1-25
+backend/DrawingPortal.sln
+  h_51a00495fb6020 1-36
+backend/global.json
+  h_51a00495fb6020 1
+backend/src/DrawingPortal.Api/.config/dotnet-tools.json
+  h_51a00495fb6020 1-13
+backend/src/DrawingPortal.Api/App_Data/files/document/2026/10/fil_55ho1hl3mz7g5qfwfnwfg.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_3u0xrj41vluszror36naz.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_4r5hn8ncnwoti7p05dakz.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_cu8kpuzf1pjjfm1b71mn4.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_i3pwrwk29x0i1nfdomsv1.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_mei5hxq1vkm9o5xvoe96q.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_p2s94ea179ij4rxy5djut.pdf
+  h_51a00495fb6020 1-177766
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_p8zudaz72u36j2qo9dxed.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_px7zduecx447rg55i8ysl.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_qnosp0anpi9xmh3zrg4af.pdf
+  h_51a00495fb6020 1-3365
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_rrjx3pwhyki1f3pmetcdk.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_wtx8qc19rpci07p7jrsz4.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_wwdvynrjx5cpe21p0stpw.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/drawing/2026/10/fil_y6ab2c2ogq80x1tzf0sg8.pdf
+  h_51a00495fb6020 1-32
+backend/src/DrawingPortal.Api/App_Data/files/requestattachment/2026/10/fil_5aaqvhlsc1b6d9gdj381e.pdf
+  h_51a00495fb6020 1-1586
+backend/src/DrawingPortal.Api/App_Data/files/requestattachment/2026/10/fil_k5v1jssp3tla5gt34blmv.pdf
+  h_51a00495fb6020 1-675
+backend/src/DrawingPortal.Api/App_Data/files/requestattachment/2026/10/fil_wqplr4kvzl39ixnzwlo9p.pdf
+  h_51a00495fb6020 1-307
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-103840-eml_ztoptb07fdx56jg2rf5fx.eml
+  h_51a00495fb6020 1-2345
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-103928-eml_lv3g4776slk9uwne9jp8w.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-103949-eml_lcyfuekrqkkk1lq6n0ji1.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104424-eml_9i978hl59c8xk9dy2alhn.eml
+  h_51a00495fb6020 1-2344
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104447-eml_8mfv9ue5yh3jqmiidyolr.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104454-eml_xrpudtswvusuki52q4ka9.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104501-eml_f9rh23wiws4865mpjl2rd.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104557-eml_qgdicn6954hu8pdx41idv.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104911-eml_4vzshirzsuxndgqx4x816.eml
+  h_51a00495fb6020 1-2333
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104921-eml_tbvr5l5rpyvzafsmp0xog.eml
+  h_51a00495fb6020 1-2333
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-104930-eml_iv2ic0jm2cxbspr2z571k.eml
+  h_51a00495fb6020 1-2334
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105056-eml_18sblaeu6fg1r2054zp8a.eml
+  h_51a00495fb6020 1-2371
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105101-eml_qp71cv3emeumif0jmsqzs.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105212-eml_17fzg3vzp3h95zoie8th8.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105225-eml_hnogjcfyhihg8kmppw0n5.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105230-eml_iqbjnu6die94v5l6gnix4.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105234-eml_s62906ewnc2vtsj3bop3m.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105238-eml_4k4468eyyxnzn8k0q98dm.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105242-eml_h1deldqxtimukxpbx6khq.eml
+  h_51a00495fb6020 1-2335
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105320-eml_nnbtdqjbj0mpyqcfq6sut.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105337-eml_ck3nnmij6uskbrfwpu84b.eml
+  h_51a00495fb6020 1-2334
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105458-eml_ygp2xpphqq0kli2rfsu9x.eml
+  h_51a00495fb6020 1-2346
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105506-eml_0y56q06kza90svmivyze1.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/App_Data/mail/20261006-105828-eml_vzztskqn3cxn01pzkggb2.eml
+  h_51a00495fb6020 1-2337
+backend/src/DrawingPortal.Api/Common/Common.cs
+  h_51a00495fb6020 1-81
+backend/src/DrawingPortal.Api/Common/NanoId.cs
+  h_51a00495fb6020 1-40
+backend/src/DrawingPortal.Api/Controllers/AuthController.cs
+  h_51a00495fb6020 1-75
+backend/src/DrawingPortal.Api/Controllers/CoreControllers.cs
+  h_51a00495fb6020 1-238
+backend/src/DrawingPortal.Api/Data/AppDbContext.cs
+  h_51a00495fb6020 1-304
+backend/src/DrawingPortal.Api/Data/DbSeeder.cs
+  h_51a00495fb6020 1-93
+backend/src/DrawingPortal.Api/Data/DbUpgrade.cs
+  h_51a00495fb6020 1-78
+backend/src/DrawingPortal.Api/Data/DesignTimeFactory.cs
+  h_51a00495fb6020 1-11
+backend/src/DrawingPortal.Api/Data/Migrations/20261005202630_InitialCreate.Designer.cs
+  h_51a00495fb6020 1-1610
+backend/src/DrawingPortal.Api/Data/Migrations/20261005202630_InitialCreate.cs
+  h_51a00495fb6020 1-1117
+backend/src/DrawingPortal.Api/Data/Migrations/20261018100000_SerialNumbersAndModelBatteries.Designer.cs
+  h_51a00495fb6020 1-1673
+backend/src/DrawingPortal.Api/Data/Migrations/20261018100000_SerialNumbersAndModelBatteries.cs
+  h_51a00495fb6020 1-67
+backend/src/DrawingPortal.Api/Data/Migrations/AppDbContextModelSnapshot.cs
+  h_51a00495fb6020 1-1670
+backend/src/DrawingPortal.Api/Domain/Entities.cs
+  h_51a00495fb6020 1-342
+backend/src/DrawingPortal.Api/DrawingPortal.Api.csproj
+  h_51a00495fb6020 1-27
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 1-210
+backend/src/DrawingPortal.Api/Options/Options.cs
+  h_51a00495fb6020 1-98
+backend/src/DrawingPortal.Api/Program.cs
+  h_51a00495fb6020 1-213
+backend/src/DrawingPortal.Api/Properties/launchSettings.json
+  h_51a00495fb6020 1-6
+backend/src/DrawingPortal.Api/Security/ApiExceptionHandler.cs
+  h_51a00495fb6020 1-33
+backend/src/DrawingPortal.Api/Security/Middleware.cs
+  h_51a00495fb6020 1-47
+backend/src/DrawingPortal.Api/Security/OtpService.cs
+  h_51a00495fb6020 1-111
+backend/src/DrawingPortal.Api/Security/TokenService.cs
+  h_51a00495fb6020 1-83
+backend/src/DrawingPortal.Api/Services/AuditService.cs
+  h_51a00495fb6020 1-31
+backend/src/DrawingPortal.Api/Services/BulkImport.cs
+  h_51a00495fb6020 1-285
+backend/src/DrawingPortal.Api/Services/DrawingMapper.cs
+  h_51a00495fb6020 1-29
+backend/src/DrawingPortal.Api/Services/DrawingNumberFormat.cs
+  h_51a00495fb6020 1-56
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 1-391
+backend/src/DrawingPortal.Api/Services/EmailDelivery.cs
+  h_51a00495fb6020 1-91
+backend/src/DrawingPortal.Api/Services/EmailSignal.cs
+  h_51a00495fb6020 1-9
+backend/src/DrawingPortal.Api/Services/EmailTemplates.cs
+  h_51a00495fb6020 1-115
+backend/src/DrawingPortal.Api/Services/FileStorage.cs
+  h_51a00495fb6020 1-145
+backend/src/DrawingPortal.Api/Services/LookupService.cs
+  h_51a00495fb6020 1-42
+backend/src/DrawingPortal.Api/Services/MasterDataService.cs
+  h_51a00495fb6020 1-211
+backend/src/DrawingPortal.Api/Services/Notifier.cs
+  h_51a00495fb6020 1-36
+backend/src/DrawingPortal.Api/Services/PlatformServices.cs
+  h_51a00495fb6020 1-197
+backend/src/DrawingPortal.Api/Services/RequestService.cs
+  h_51a00495fb6020 1-329
+backend/src/DrawingPortal.Api/Services/SettingsService.cs
+  h_51a00495fb6020 1-70
+backend/src/DrawingPortal.Api/Services/SuggestionEngine.cs
+  h_51a00495fb6020 1-59
+backend/src/DrawingPortal.Api/Workers/Workers.cs
+  h_51a00495fb6020 1-83
+backend/src/DrawingPortal.Api/appsettings.Development.json
+  h_51a00495fb6020 1-4
+backend/src/DrawingPortal.Api/appsettings.Trial.json
+  h_51a00495fb6020 1-6
+backend/src/DrawingPortal.Api/appsettings.json
+  h_51a00495fb6020 1-72
+backend/src/DrawingPortal.Api/web.config
+  h_51a00495fb6020 1-13
+backend/src/DrawingPortal.Api/wwwroot/favicon.svg
+  h_51a00495fb6020 1
+backend/src/DrawingPortal.Api/wwwroot/index.html
+  h_51a00495fb6020 1-16
+backend/tests/DrawingPortal.Tests/ApiFixture.cs
+  h_51a00495fb6020 1-100
+backend/tests/DrawingPortal.Tests/ApiTests.cs
+  h_51a00495fb6020 1-599
+backend/tests/DrawingPortal.Tests/DrawingPortal.Tests.csproj
+  h_51a00495fb6020 1-27
+backend/tests/DrawingPortal.Tests/PerformanceTests.cs
+  h_51a00495fb6020 1-61
+backend/tests/DrawingPortal.Tests/UnitTests.cs
+  h_51a00495fb6020 1-127
+database/schema.sql
+  h_51a00495fb6020 1-1155
+docs/ARCHITECTURE.md
+  h_51a00495fb6020 1-32
+docs/DEPLOYMENT.md
+  h_51a00495fb6020 1-25
+docs/SECURITY.md
+  h_51a00495fb6020 1-19
+frontend/.gitignore
+  h_51a00495fb6020 1-24
+frontend/.husky/pre-commit
+  h_51a00495fb6020 1-2
+frontend/.oxlintrc.json
+  h_51a00495fb6020 1-8
+frontend/components.json
+  h_51a00495fb6020 1-25
+frontend/index.html
+  h_51a00495fb6020 1-14
+frontend/package-lock.json
+  h_51a00495fb6020 1-8523
+frontend/package.json
+  h_51a00495fb6020 1-60
+frontend/public/favicon.svg
+  h_51a00495fb6020 1
+frontend/src/App.tsx
+  h_51a00495fb6020 1-155
+frontend/src/components/app/common.tsx
+  h_51a00495fb6020 1-424
+frontend/src/components/app/data-table.tsx
+  h_51a00495fb6020 1-361
+frontend/src/components/app/drawing-bits.tsx
+  h_51a00495fb6020 1-80
+frontend/src/components/app/fields.tsx
+  h_51a00495fb6020 1-303
+frontend/src/components/app/file-upload.tsx
+  h_51a00495fb6020 1-162
+frontend/src/components/app/logo.tsx
+  h_51a00495fb6020 1-13
+frontend/src/components/app/powered-by.tsx
+  h_51a00495fb6020 1-18
+frontend/src/components/app/require-auth.tsx
+  h_51a00495fb6020 1-47
+frontend/src/components/app/shell.tsx
+  h_51a00495fb6020 1-508
+frontend/src/components/app/vehicle-fields.tsx
+  h_51a00495fb6020 1-90
+frontend/src/components/app/visual-comparison.tsx
+  h_51a00495fb6020 1-227
+frontend/src/components/ui/alert-dialog.tsx
+  h_51a00495fb6020 1-197
+frontend/src/components/ui/alert.tsx
+  h_51a00495fb6020 1-75
+frontend/src/components/ui/badge.tsx
+  h_51a00495fb6020 1-48
+frontend/src/components/ui/button.tsx
+  h_51a00495fb6020 1-66
+frontend/src/components/ui/card.tsx
+  h_51a00495fb6020 1-102
+frontend/src/components/ui/checkbox.tsx
+  h_51a00495fb6020 1-29
+frontend/src/components/ui/dialog.tsx
+  h_51a00495fb6020 1-167
+frontend/src/components/ui/dropdown-menu.tsx
+  h_51a00495fb6020 1-272
+frontend/src/components/ui/form.tsx
+  h_51a00495fb6020 1-140
+frontend/src/components/ui/input.tsx
+  h_51a00495fb6020 1-18
+frontend/src/components/ui/label.tsx
+  h_51a00495fb6020 1-21
+frontend/src/components/ui/popover.tsx
+  h_51a00495fb6020 1-86
+frontend/src/components/ui/progress.tsx
+  h_51a00495fb6020 1-28
+frontend/src/components/ui/scroll-area.tsx
+  h_51a00495fb6020 1-54
+frontend/src/components/ui/select.tsx
+  h_51a00495fb6020 1-194
+frontend/src/components/ui/separator.tsx
+  h_51a00495fb6020 1-27
+frontend/src/components/ui/sheet.tsx
+  h_51a00495fb6020 1-146
+frontend/src/components/ui/skeleton.tsx
+  h_51a00495fb6020 1-13
+frontend/src/components/ui/sonner.tsx
+  h_51a00495fb6020 1-12
+frontend/src/components/ui/switch.tsx
+  h_51a00495fb6020 1-30
+frontend/src/components/ui/table.tsx
+  h_51a00495fb6020 1-155
+frontend/src/components/ui/tabs.tsx
+  h_51a00495fb6020 1-89
+frontend/src/components/ui/textarea.tsx
+  h_51a00495fb6020 1-17
+frontend/src/components/ui/tooltip.tsx
+  h_51a00495fb6020 1-56
+frontend/src/index.css
+  h_51a00495fb6020 1-110
+frontend/src/lib/api.ts
+  h_51a00495fb6020 1-132
+frontend/src/lib/cookies.ts
+  h_51a00495fb6020 1-29
+frontend/src/lib/hooks.ts
+  h_51a00495fb6020 1-88
+frontend/src/lib/query.ts
+  h_51a00495fb6020 1-13
+frontend/src/lib/schemas.ts
+  h_51a00495fb6020 1-91
+frontend/src/lib/types.ts
+  h_51a00495fb6020 1-346
+frontend/src/lib/util.ts
+  h_51a00495fb6020 1-105
+frontend/src/lib/utils.ts
+  h_51a00495fb6020 1-6
+frontend/src/main.tsx
+  h_51a00495fb6020 1-29
+frontend/src/pages/admin/audit.tsx
+  h_51a00495fb6020 1-177
+frontend/src/pages/admin/bulk-import.tsx
+  h_51a00495fb6020 1-343
+frontend/src/pages/admin/drawing-files.tsx
+  h_51a00495fb6020 1-363
+frontend/src/pages/admin/drawing-form.tsx
+  h_51a00495fb6020 1-1154
+frontend/src/pages/admin/drawings.tsx
+  h_51a00495fb6020 1-322
+frontend/src/pages/admin/master-data.tsx
+  h_51a00495fb6020 1-666
+frontend/src/pages/admin/settings.tsx
+  h_51a00495fb6020 1-204
+frontend/src/pages/admin/users.tsx
+  h_51a00495fb6020 1-261
+frontend/src/pages/dashboard.tsx
+  h_51a00495fb6020 1-481
+frontend/src/pages/documents.tsx
+  h_51a00495fb6020 1-360
+frontend/src/pages/drawing-detail.tsx
+  h_51a00495fb6020 1-387
+frontend/src/pages/login.tsx
+  h_51a00495fb6020 1-480
+frontend/src/pages/number-search.tsx
+  h_51a00495fb6020 1-223
+frontend/src/pages/request-detail.tsx
+  h_51a00495fb6020 1-713
+frontend/src/pages/request-form.tsx
+  h_51a00495fb6020 1-784
+frontend/src/pages/requests.tsx
+  h_51a00495fb6020 1-291
+frontend/src/pages/search.tsx
+  h_51a00495fb6020 1-600
+frontend/src/stores/auth.ts
+  h_51a00495fb6020 1-51
+frontend/src/stores/filters.ts
+  h_51a00495fb6020 1-76
+frontend/src/stores/ui.ts
+  h_51a00495fb6020 1-20
+frontend/src/types/table.d.ts
+  h_51a00495fb6020 1-9
+frontend/tsconfig.app.json
+  h_51a00495fb6020 1-34
+frontend/tsconfig.json
+  h_51a00495fb6020 1-18
+frontend/tsconfig.node.json
+  h_51a00495fb6020 1-23
+frontend/vite.config.ts
+  h_51a00495fb6020 1-14
+scripts/publish.ps1
+  h_51a00495fb6020 1-12
+scripts/publish.sh
+  h_51a00495fb6020 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ca4791ea678ba49b8c0b44c40937fd6372b0fd55",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
