@@ -1,0 +1,11 @@
+**/bin
+**/obj
+**/node_modules
+**/.vs
+**/.git
+backend/src/DrawingPortal.Api/wwwroot
+frontend/dist
+*.zip
+*.md
+docker-compose*.yml
+.env
