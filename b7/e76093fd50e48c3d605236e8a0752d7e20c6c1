@@ -1,0 +1,20 @@
+docs/ARCHITECTURE.md
+  h_51a00495fb6020 6,10,16,20-24,29-30,32-34,37,40-43
+  h_51a00495fb6020 31
+docs/SECURITY.md
+  h_51a00495fb6020 8-12,18-21,24-31
+  h_51a00495fb6020 23
+docs/DEPLOYMENT.md
+  h_51a00495fb6020 1-44,46-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b7e76093fd50e48c3d605236e8a0752d7e20c6c1",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
