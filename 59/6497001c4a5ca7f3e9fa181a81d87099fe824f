@@ -1,0 +1,16 @@
+scripts/deploy-iis.bat
+  h_51a00495fb6020 1-41
+scripts/publish.bat
+  h_51a00495fb6020 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "596497001c4a5ca7f3e9fa181a81d87099fe824f",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
