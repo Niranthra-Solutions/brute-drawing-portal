@@ -49,6 +49,11 @@ import {
 import { DataTable } from "@/components/app/data-table";
 import { FilterSelect, FInput, FTextarea } from "@/components/app/fields";
 import { FileUpload } from "@/components/app/file-upload";
+import {
+  FilePreview,
+  previewKind,
+  type PreviewTarget,
+} from "@/components/app/file-preview";
 
 export default function DocumentsPage() {
   const admin = useIsAdmin();
@@ -62,6 +67,7 @@ export default function DocumentsPage() {
   const q = useDebounced(f.q);
   const [edit, setEdit] = useState<DocumentItem | "new" | null>(null);
   const [del, setDel] = useState<DocumentItem | null>(null);
+  const [preview, setPreview] = useState<PreviewTarget | null>(null);
   const list = useQuery({
     queryKey: ["documents", { ...f, q }],
     queryFn: () =>
@@ -127,17 +133,35 @@ export default function DocumentsPage() {
       meta: { className: "text-right" },
       cell: ({ row: { original: d } }) => (
         <div className="flex justify-end gap-1.5">
-          {d.canPreview && (
-            <Button asChild variant="outline" size="icon-sm">
-              <a
-                href={fileUrl(d.fileId, true)}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`View ${d.title}`}
-              >
-                <Eye />
-              </a>
+          {previewKind(d.extension) ? (
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label={`View ${d.title}`}
+              title="View"
+              onClick={() =>
+                setPreview({
+                  fileId: d.fileId,
+                  title: d.title,
+                  ext: d.extension,
+                })
+              }
+            >
+              <Eye />
             </Button>
+          ) : (
+            d.canPreview && (
+              <Button asChild variant="outline" size="icon-sm" title="View">
+                <a
+                  href={fileUrl(d.fileId, true)}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`View ${d.title}`}
+                >
+                  <Eye />
+                </a>
+              </Button>
+            )
           )}
           <Button asChild variant="outline" size="icon-sm">
             <a href={fileUrl(d.fileId)} aria-label={`Download ${d.title}`}>
@@ -240,6 +264,7 @@ export default function DocumentsPage() {
           }}
         />
       )}
+      <FilePreview target={preview} onClose={() => setPreview(null)} />
       <ConfirmDialog
         open={!!del}
         onOpenChange={(o) => !o && setDel(null)}

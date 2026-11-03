@@ -103,3 +103,19 @@ export const maskHint = (mask: string) => mask.replace(/#/g, "9");
 export const dimOk = (v: string) => /^\d{3,4}$/.test(v);
 export const digits = (v: string, max = 4) =>
   v.replace(/\D/g, "").slice(0, max);
+
+/** AFS & drain-hole options offered on the request forms (stored as AFS / Middle / Corner). */
+export const AFS_OPTIONS = [
+  { value: "AFS", label: "AFS Required" },
+  { value: "Middle", label: "Middle Drain Holes Required" },
+  { value: "Corner", label: "Corner Drain Holes Required" },
+];
+export const afsRequestLabel = (v?: string | null) =>
+  AFS_OPTIONS.find((o) => o.value === v)?.label ?? "";
+
+/** What an admin marks on a drawing: AFS / drain holes that the drawing already has. */
+export const AFS_DRAWING_OPTIONS = [
+  { value: "AFS", label: "AFS" },
+  { value: "Middle", label: "Middle drain holes" },
+  { value: "Corner", label: "Corner drain holes" },
+];

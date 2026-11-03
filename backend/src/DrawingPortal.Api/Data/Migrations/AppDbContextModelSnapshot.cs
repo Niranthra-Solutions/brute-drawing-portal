@@ -307,6 +307,10 @@ namespace DrawingPortal.Api.Data.Migrations
                     b.Property<int>("AhValue")
                         .HasColumnType("int");
 
+                    b.Property<string>("AfsDrain")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
                     b.Property<string>("Comments")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -420,6 +424,10 @@ namespace DrawingPortal.Api.Data.Migrations
                         .HasMaxLength(32)
                         .IsUnicode(false)
                         .HasColumnType("varchar(32)");
+
+                    b.Property<string>("AfsDrain")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("AhStandard")
                         .HasMaxLength(20)

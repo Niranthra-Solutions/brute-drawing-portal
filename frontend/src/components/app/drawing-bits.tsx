@@ -19,13 +19,25 @@ export function DrawingActions({
       className="flex justify-end gap-1.5"
       onClick={(e) => e.stopPropagation()}
     >
-      <Button asChild variant="outline" size="icon-sm" title="View drawing">
+      <Button
+        asChild
+        variant="outline"
+        size="icon-sm"
+        title="View drawing"
+        className="border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800"
+      >
         <Link to={`/drawings/${d.id}`} aria-label={`View ${d.drawingNumber}`}>
           <Eye />
         </Link>
       </Button>
       {d.fileId && (
-        <Button asChild variant="outline" size="icon-sm" title="Download">
+        <Button
+          asChild
+          variant="outline"
+          size="icon-sm"
+          title="Download"
+          className="border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+        >
           <a
             href={fileUrl(d.fileId)}
             aria-label={`Download ${d.drawingNumber}`}
@@ -50,6 +62,7 @@ export function DrawingActions({
             variant="outline"
             size="icon-sm"
             title="Request modification"
+            className="border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-800"
           >
             <Link
               to={`/requests/modify?drawingId=${d.id}`}
@@ -78,3 +91,38 @@ export const DrawingNo = ({ children }: { children: React.ReactNode }) => (
     {children}
   </span>
 );
+
+/** Vehicle cell: "Linde E16H" with "Imports · Reach Truck · 1.6 T" beneath (category, type and capacity). */
+export const VehicleCell = ({
+  d,
+}: {
+  d: Pick<Drawing, "make" | "model" | "category" | "vehicleType" | "capacity">;
+}) => (
+  <div>
+    <div className="font-semibold">
+      {d.make} {d.model}
+    </div>
+    <div className="text-xs text-muted-foreground">
+      {[d.category, d.vehicleType, d.capacity].filter(Boolean).join(" · ")}
+    </div>
+  </div>
+);
+
+/** Comment for a drawing: the AFS / drain-hole note (highlighted) followed by the admin's own comment. */
+export const DrawingComment = ({
+  d,
+}: {
+  d: Pick<Drawing, "afsDrainText" | "comments">;
+}) =>
+  d.afsDrainText || d.comments ? (
+    <div className="min-w-44 max-w-64 space-y-1 text-xs">
+      {d.afsDrainText && (
+        <div className="rounded-md bg-amber-100 px-2 py-1 font-semibold text-amber-900">
+          {d.afsDrainText}
+        </div>
+      )}
+      {d.comments && <div className="text-muted-foreground">{d.comments}</div>}
+    </div>
+  ) : (
+    <span className="text-muted-foreground">—</span>
+  );

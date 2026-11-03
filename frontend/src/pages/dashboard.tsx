@@ -64,8 +64,10 @@ function Stat({
   tone,
   hero,
   warn,
+  accent,
   onClick,
 }: {
+  accent?: string;
   onClick?: () => void;
   label: string;
   value: React.ReactNode;
@@ -99,7 +101,8 @@ function Stat({
     >
       <Card2
         className={cn(
-          "flex min-h-32 flex-col justify-between p-[18px]",
+          "flex min-h-32 flex-col justify-between border-t-4 p-[18px]",
+          accent,
           hero && "p-[22px]",
           onClick && "transition hover:border-brand/60 hover:shadow-md",
         )}
@@ -184,7 +187,7 @@ export default function DashboardPage() {
                 "Search by vehicle, battery and tray dimensions. Get the exact drawing or the closest standard alternatives.",
               ],
               [
-                "/search/number",
+                "/search-by-number",
                 Hash,
                 "Search by drawing number",
                 "Know the number already? Jump straight to the drawing and its revision history.",
@@ -196,7 +199,12 @@ export default function DashboardPage() {
               variants={item}
               whileHover={{ y: -2 }}
               onClick={() => nav(to)}
-              className="flex w-full items-center gap-[18px] rounded-[20px] border bg-card p-6 text-left transition-shadow hover:border-brand hover:shadow-[0_18px_40px_-26px_rgba(224,106,44,.7)]"
+              className={cn(
+                "flex w-full items-center gap-[18px] rounded-[20px] border-2 p-6 text-left transition-shadow hover:border-brand hover:shadow-[0_18px_40px_-26px_rgba(224,106,44,.7)]",
+                to === "/search"
+                  ? "border-orange-200 bg-gradient-to-br from-orange-50 to-card"
+                  : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-card",
+              )}
             >
               <span className="flex size-[76px] shrink-0 items-center justify-center rounded-[20px] bg-brand-soft text-brand-dark">
                 <Icon className="size-8" />
@@ -218,6 +226,7 @@ export default function DashboardPage() {
             foot={`+${d.addedThisWeek} added this week`}
             icon={Database}
             tone="bg-brand-soft text-brand-dark"
+            accent="border-t-orange-500 bg-orange-50/50"
           />
           <Stat
             label={admin ? "Open requests" : "My open requests"}
@@ -228,6 +237,7 @@ export default function DashboardPage() {
             warn={r.criticalOpen > 0}
             icon={Inbox}
             tone="bg-info-soft text-info"
+            accent="border-t-blue-500 bg-blue-50/50"
             onClick={() => showRequests("open")}
           />
           <Stat
@@ -236,6 +246,7 @@ export default function DashboardPage() {
             foot={`${r.completed} all-time`}
             icon={Check}
             tone="bg-success-soft text-[#2f6b25]"
+            accent="border-t-emerald-500 bg-emerald-50/50"
             onClick={() => showRequests("completed30")}
           />
           <Stat
@@ -249,6 +260,7 @@ export default function DashboardPage() {
             foot="submitted → drawing"
             icon={Clock}
             tone="bg-muted text-muted-foreground"
+            accent="border-t-violet-400 bg-violet-50/50"
           />
         </div>
       </motion.div>

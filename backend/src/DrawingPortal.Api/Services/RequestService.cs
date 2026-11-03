@@ -51,6 +51,8 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
         throw ApiException.Conflict("Could not allocate a ticket number. Please try again.");
     }
 
+    public static string AfsLabel(string? v) => v switch { "AFS" => "AFS Required", "Middle" => "Middle Drain Holes Required", "Corner" => "Corner Drain Holes Required", _ => "" };
+
     public async Task<RequestDetailDto> CreateAsync(CreateRequestDto dto, CancellationToken ct)
     {
         var errs = new FieldErrors();
@@ -65,7 +67,7 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
 
         if (dto.Type == RequestType.New)
         {
-            foreach (var (f, v, label) in new[] { ("categoryName", dto.CategoryName, "Vehicle category"), ("vehicleTypeName", dto.VehicleTypeName, "Vehicle type"), ("makeName", dto.MakeName, "Vehicle make"),
+            foreach (var (f, v, label) in new[] { ("vehicleTypeName", dto.VehicleTypeName, "Vehicle type"), ("makeName", dto.MakeName, "Vehicle make"),
                          ("modelName", dto.ModelName, "Model"), ("capacity", dto.Capacity, "Vehicle capacity"), ("connectorName", dto.ConnectorName, "End connector type") })
                 if (string.IsNullOrWhiteSpace(v)) errs.Add(f, $"{label} is required.");
             if (dto.VoltageV is null or < 1) errs.Add("voltageV", "Voltage is required.");
@@ -75,15 +77,15 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
         else
         {
             if (related is null) errs.Add("relatedDrawingId", "Select the drawing that needs to be modified.");
-            else if (related.DrawingNumber.Length > 2 && char.IsLetter(related.DrawingNumber[^1]) && related.DrawingNumber[^2] == ' ')
+            else
             {
-                // only the LATEST revision (A -> B -> C ...) of a drawing can be modified
-                var pre = related.DrawingNumber[..^1];
-                var newer = await db.Drawings.AsNoTracking().Where(d => d.ModelId == related.ModelId && d.Status == DrawingStatus.Active && d.DrawingNumber.StartsWith(pre) && d.DrawingNumber.Length == pre.Length + 1)
-                    .OrderByDescending(d => d.DrawingNumber).Select(d => d.DrawingNumber).FirstOrDefaultAsync(ct);
-                if (newer is not null && string.CompareOrdinal(newer, related.DrawingNumber) > 0)
-                    errs.Add("relatedDrawingId", $"Only the latest revision can be modified. {related.DrawingNumber} has a newer revision ({newer}) - select that one.");
+                // only the LATEST revision (A -> B -> C ...) can be modified, judged across every vehicle make / model that carries the number
+                var latest = await RevisionRules.LatestByPrefixAsync(db, [related.DrawingNumber], ct);
+                if (RevisionRules.NewerThan(latest, related.DrawingNumber) is { } newer)
+                    errs.Add("relatedDrawingId", $"Next revision is already available with this drawing number ({newer}). {related.DrawingNumber} cannot be modified.");
             }
+            if (string.IsNullOrWhiteSpace(dto.ChangeType)) errs.Add("changeType", "Select the type of change.");
+            if (string.IsNullOrWhiteSpace(dto.Reason)) errs.Add("reason", "Enter the reason for the modification.");
             Dim("lengthMm", dto.LengthMm, "Length", false); Dim("widthMm", dto.WidthMm, "Width", false); Dim("heightMm", dto.HeightMm, "Height", false);
             // required change, reason and reference file are optional for modification requests
         }
@@ -105,7 +107,7 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
             ModelName = Text.NullIfEmpty(R(dto.ModelName, 120)), Capacity = Text.NullIfEmpty(R(dto.Capacity, 40)), VoltageV = dto.VoltageV, AhValue = dto.AhValue,
             AhStandard = Text.NullIfEmpty(R(dto.AhStandard, 20))?.ToUpperInvariant(), LengthMm = dto.LengthMm, WidthMm = dto.WidthMm, HeightMm = dto.HeightMm,
             ConnectorName = Text.NullIfEmpty(R(dto.ConnectorName, 100)), ChangeType = Text.NullIfEmpty(R(dto.ChangeType, 40)),
-            TargetDateUtc = dto.TargetDate?.ToUniversalTime(), Description = Text.CleanMultiline(dto.Description, 4000), Reason = Text.NullIfEmpty(Text.CleanMultiline(dto.Reason, 2000)),
+            TargetDateUtc = dto.TargetDate?.ToUniversalTime(), Description = Text.CleanMultiline(dto.Description, 4000), Reason = Text.NullIfEmpty(Text.CleanMultiline(dto.Reason, 2000)), AfsDrain = DrawingMapper.NormalizeAfs(dto.AfsDrain)?.Split(',')[0],
         };
         db.Requests.Add(r);
         foreach (var f in files) db.RequestAttachments.Add(new RequestAttachment { RequestId = r.Id, FileId = f.Id });
@@ -119,7 +121,7 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
             ("Existing / base drawing", related is null ? "" : $"{related.DrawingNumber} - {related.Model?.Make?.Name} {related.Model?.ModelName}"),
             ("Vehicle", string.Join(" / ", new[] { r.CategoryName, r.MakeName, r.VehicleTypeName, r.ModelName, r.Capacity }.Where(x => !string.IsNullOrEmpty(x)))),
             ("Battery", r.VoltageV is null ? "" : $"{r.VoltageV} V / {DrawingMapper.AhLabel(r.AhValue ?? 0, r.AhStandard ?? "")} Ah"),
-            ("Tray dimensions (mm)", r.LengthMm is null ? "" : $"{r.LengthMm} x {r.WidthMm} x {r.HeightMm}"), ("End connector", r.ConnectorName ?? ""), ("Change type", r.ChangeType ?? ""),
+            ("Tray dimensions (mm)", r.LengthMm is null ? "" : $"{r.LengthMm} x {r.WidthMm} x {r.HeightMm}"), ("End connector", r.ConnectorName ?? ""), ("Change type", r.ChangeType ?? ""), ("AFS & drain holes", AfsLabel(r.AfsDrain)),
             ("Attachments", files.Count == 0 ? "" : string.Join(", ", files.Select(f => f.OriginalName))),
         };
         var subject = $"[Drawing Portal] {(dto.Type == RequestType.New ? "New drawing request" : "Modification request")} {ticket} from {user.Name}";
@@ -192,7 +194,7 @@ public sealed class RequestService(AppDbContext db, ICurrentUser user, INotifier
             r.Description, r.Reason, r.SubmittedAtUtc, r.UpdatedAtUtc, r.ClosedAtUtc, r.ClosureNote, r.ResultDrawingId, r.ResultDrawing?.DrawingNumber, result,
             r.Attachments.Where(a => a.File != null).Select(a => new AttachmentDto(a.FileId, a.File!.OriginalName, a.File.SizeBytes, a.File.Url, DrawingMapper.IsPreviewable(a.File.OriginalName))).ToList(),
             r.Events.OrderBy(e => e.CreatedAtUtc).Select(e => new RequestEventDto(e.Id, e.Action, e.FromStatus, e.ToStatus, e.Note, e.Actor?.FullName, e.CreatedAtUtc)).ToList(),
-            user.IsAdmin && !IsClosed(r.Status), IsClosed(r.Status));
+            user.IsAdmin && !IsClosed(r.Status), IsClosed(r.Status), r.AfsDrain);
     }
 
     public async Task<RequestStatsDto> StatsAsync(CancellationToken ct)

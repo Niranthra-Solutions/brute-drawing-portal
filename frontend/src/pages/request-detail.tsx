@@ -16,6 +16,7 @@ import {
   fmtSize,
   initials,
   statusLabel,
+  afsRequestLabel,
 } from "@/lib/util";
 import { commentSchema } from "@/lib/schemas";
 import { useAuth, useIsAdmin } from "@/stores/auth";
@@ -286,6 +287,9 @@ export default function RequestDetailPage() {
                 </SpecRow>
                 <SpecRow label="Vehicle">{`${d.make} ${d.model} · ${d.capacity}`}</SpecRow>
                 <SpecRow label="Change type">{r.changeType}</SpecRow>
+                <SpecRow label="AFS & drain holes">
+                  {afsRequestLabel(r.afsDrain) || "—"}
+                </SpecRow>
                 <SpecRow label="Voltage">
                   {changed(d.voltageV, r.voltageV, " V")}
                 </SpecRow>

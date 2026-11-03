@@ -28,6 +28,13 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
+    /// <summary>Maps rows to DTOs and flags IsLatest across every make / model that carries the same drawing number.</summary>
+    private async Task<List<DrawingDto>> ToDtosAsync(IReadOnlyCollection<DrawingRow> rows, CancellationToken ct)
+    {
+        var latest = await RevisionRules.LatestByPrefixAsync(db, rows.Select(r => r.DrawingNumber), ct);
+        return rows.Select(r => DrawingMapper.ToDto(r) with { IsLatest = RevisionRules.IsLatest(latest, r.DrawingNumber) }).ToList();
+    }
+
     // ====================================================================== SEARCH
     public async Task<SearchResultDto> SearchAsync(SearchQueryDto q, CancellationToken ct)
     {
@@ -39,17 +46,18 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         var s = await settings.GetAsync(ct);
         var tol = new Tolerance(s.ToleranceLengthMm, s.ToleranceWidthMm, s.ToleranceHeightMm);
         var std = (q.AhStandard ?? "").Trim().ToUpperInvariant();
-        var makeId = q.ModelId is null ? null : await db.Models.AsNoTracking().Where(m => m.Id == q.ModelId).Select(m => m.MakeId).FirstOrDefaultAsync(ct);
-        var criteria = new SearchCriteria(q.ModelId, makeId, q.VoltageV, q.AhValue, std, q.LengthMm, q.WidthMm, q.HeightMm);
+        var makeId = string.IsNullOrEmpty(q.ModelId) ? null : await db.Models.AsNoTracking().Where(m => m.Id == q.ModelId).Select(m => m.MakeId).FirstOrDefaultAsync(ct);
+        var criteria = new SearchCriteria(string.IsNullOrEmpty(q.ModelId) ? null : q.ModelId, makeId, q.VoltageV, q.AhValue, std, q.LengthMm, q.WidthMm, q.HeightMm);
         var tolDto = new ToleranceDto(tol.LengthMm, tol.WidthMm, tol.HeightMm);
 
         // 1) Standard drawing: ALL inputs match (BRD 1.5)
-        var exact = new List<DrawingRow>();
-        if (q.ModelId is not null)
-            exact = await db.Drawings.AsNoTracking()
-                .Where(d => d.Status == DrawingStatus.Active && d.ModelId == q.ModelId && d.VoltageV == q.VoltageV && d.AhValue == q.AhValue && d.AhStandard == std
-                         && d.LengthMm == q.LengthMm && d.WidthMm == q.WidthMm && d.HeightMm == q.HeightMm)
-                .OrderBy(d => d.DrawingNumber).Select(DrawingMapper.Row).ToListAsync(ct);
+        // The vehicle is optional: without it the match is on voltage, Ah rating and tray dimensions alone (any vehicle).
+        var byModel = !string.IsNullOrEmpty(q.ModelId);
+        var exact = await db.Drawings.AsNoTracking()
+            .Where(d => d.Status == DrawingStatus.Active && (!byModel || d.ModelId == q.ModelId) && d.VoltageV == q.VoltageV && d.AhValue == q.AhValue && d.AhStandard == std
+                     && d.LengthMm == q.LengthMm && d.WidthMm == q.WidthMm && d.HeightMm == q.HeightMm)
+            .OrderBy(d => d.Model!.Make!.Name).ThenBy(d => d.Model!.ModelName).ThenBy(d => d.DrawingNumber).Select(DrawingMapper.Row).Take(100).ToListAsync(ct);
+
 
         // 2) Non-standard suggestions (BRD 1.8): only when no exact match, or when the user explicitly asks for similar ones too.
         var similar = new List<SuggestionDto>();
@@ -71,8 +79,8 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
             if (ranked.Count > 0)
             {
                 var ids = ranked.Select(r => r.Drawing.Id).ToList();
-                var rows = (await db.Drawings.AsNoTracking().Where(d => ids.Contains(d.Id)).Select(DrawingMapper.Row).ToListAsync(ct)).ToDictionary(r => r.Id);
-                similar = ranked.Select(r => new SuggestionDto(DrawingMapper.ToDto(rows[r.Drawing.Id]), r.DeltaLength, r.DeltaWidth, r.DeltaHeight, r.FitPercent, r.SameModel, r.SameMake, r.SameAh)).ToList();
+                var rows = (await ToDtosAsync(await db.Drawings.AsNoTracking().Where(d => ids.Contains(d.Id)).Select(DrawingMapper.Row).ToListAsync(ct), ct)).ToDictionary(r => r.Id);
+                similar = ranked.Select(r => new SuggestionDto(rows[r.Drawing.Id], r.DeltaLength, r.DeltaWidth, r.DeltaHeight, r.FitPercent, r.SameModel, r.SameMake, r.SameAh)).ToList();
             }
         }
 
@@ -80,7 +88,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         var note = mode == "NonStandard"
             ? "No exact match was found. The drawings below are non-standard suggestions based on the closest dimension tolerances. Please select the drawing that best matches your requirement."
             : mode == "None" ? "No standard drawing or close match was found. You can raise a new drawing request." : null;
-        return new SearchResultDto(mode, exact.Select(DrawingMapper.ToDto).ToList(), similar, tolDto, note, totalCandidates);
+        return new SearchResultDto(mode, await ToDtosAsync(exact, ct), similar, tolDto, note, totalCandidates);
     }
 
     public async Task<DrawingDetailDto> FindByNumberAsync(string number, CancellationToken ct)
@@ -133,8 +141,8 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         if (!user.IsAdmin) q = q.Where(d => d.Status == DrawingStatus.Active);
         var rows = await q.OrderBy(d => d.Model!.Make!.Name).ThenBy(d => d.Model!.ModelName).ThenBy(d => d.ModelId).ThenBy(d => d.DrawingNumber).Select(DrawingMapper.Row).Take(300).ToListAsync(ct);
         if (rows.Count == 0) throw ApiException.NotFound($"No drawing was found with number {prefix}.");
-        var latest = rows.GroupBy(r => r.ModelId).ToDictionary(g => g.Key, g => g.Max(r => r.DrawingNumber)!);
-        return new NumberMatchesDto(rows.Select(r => DrawingMapper.ToDto(r) with { IsLatest = r.DrawingNumber == latest[r.ModelId] }).ToList(), null);
+        // "Latest" is judged across EVERY make and model that carries this number: once Rev B exists for any vehicle, Rev A is locked for all of them.
+        return new NumberMatchesDto(await ToDtosAsync(rows, ct), null);
     }
 
     public async Task<DrawingDetailDto> GetAsync(string id, CancellationToken ct)
@@ -158,9 +166,11 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
             if (f is not null) file = new FileInfoDto(f.Id, f.OriginalName, f.ContentType, f.SizeBytes, f.Sha256, f.Url, f.CreatedAtUtc, DrawingMapper.IsPreviewable(f.OriginalName));
         }
         var lineageRows = await LineageRowsAsync(row.DrawingNumber, row.ModelId, ct);
-        var latestNo = lineageRows.Count > 0 ? lineageRows[^1].DrawingNumber : row.DrawingNumber;
-        var lineage = lineageRows.Count > 1 ? lineageRows.Select(r => DrawingMapper.ToDto(r) with { IsLatest = r.DrawingNumber == latestNo }).ToList() : null;
-        return new DrawingDetailDto(DrawingMapper.ToDto(row) with { IsLatest = row.DrawingNumber == latestNo }, revisions, file, meta.CreatedAtUtc, meta.CreatedById is not null && names.TryGetValue(meta.CreatedById, out var cn) ? cn : null, null, lineage);
+        var latestMap = await RevisionRules.LatestByPrefixAsync(db, lineageRows.Select(r => r.DrawingNumber).Append(row.DrawingNumber), ct);
+        bool Latest(DrawingRow r) => RevisionRules.IsLatest(latestMap, r.DrawingNumber);
+        var lineage = lineageRows.Count > 1 ? lineageRows.Select(r => DrawingMapper.ToDto(r) with { IsLatest = Latest(r) }).ToList() : null;
+        var newer = RevisionRules.NewerThan(latestMap, row.DrawingNumber);
+        return new DrawingDetailDto(DrawingMapper.ToDto(row) with { IsLatest = Latest(row) }, revisions, file, meta.CreatedAtUtc, meta.CreatedById is not null && names.TryGetValue(meta.CreatedById, out var cn) ? cn : null, null, lineage, newer);
     }
 
     public async Task<PagedResult<DrawingDto>> ListAsync(DrawingListQuery q, CancellationToken ct)
@@ -252,7 +262,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         {
             DrawingNumber = DrawingNumberFormat.Normalize(dto.DrawingNumber), ModelId = dto.ModelId, VoltageV = dto.VoltageV, AhValue = dto.AhValue,
             AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant(), LengthMm = dto.LengthMm, WidthMm = dto.WidthMm, HeightMm = dto.HeightMm,
-            ConnectorTypeId = dto.ConnectorTypeId, Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)),
+            ConnectorTypeId = dto.ConnectorTypeId, Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)), AfsDrain = DrawingMapper.NormalizeAfs(dto.AfsDrain),
             CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(dto.CompetitorDrawingNumber, 60)),
             CurrentRevisionNo = 1, CurrentFileId = file!.Id, CreatedById = user.Id,
         };
@@ -293,7 +303,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
         }
         d.DrawingNumber = DrawingNumberFormat.Normalize(dto.DrawingNumber); d.ModelId = dto.ModelId; d.VoltageV = dto.VoltageV; d.AhValue = dto.AhValue;
         d.AhStandard = Text.Clean(dto.AhStandard, 20).ToUpperInvariant(); d.LengthMm = dto.LengthMm; d.WidthMm = dto.WidthMm; d.HeightMm = dto.HeightMm;
-        d.ConnectorTypeId = dto.ConnectorTypeId; d.Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000));
+        d.ConnectorTypeId = dto.ConnectorTypeId; d.Comments = Text.NullIfEmpty(Text.CleanMultiline(dto.Comments, 2000)); d.AfsDrain = DrawingMapper.NormalizeAfs(dto.AfsDrain);
         d.CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(dto.CompetitorDrawingNumber, 60)); d.Status = dto.Status; d.UpdatedAtUtc = DateTime.UtcNow;
         await MasterDataService.LinkBatteryAsync(db, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard, ct);
         audit.Add("DrawingUpdated", "Drawing", d.Id, $"Updated drawing {d.DrawingNumber}", new { before = JsonDocument.Parse(before).RootElement, after = JsonDocument.Parse(Snapshot(d)).RootElement, status = d.Status.ToString() });
@@ -359,7 +369,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
             DrawingNumber = newNumber, ModelId = modelId, VoltageV = dto.VoltageV ?? src.VoltageV, AhValue = dto.AhValue ?? src.AhValue,
             AhStandard = dto.AhStandard is not null ? Text.Clean(dto.AhStandard, 20).ToUpperInvariant() : src.AhStandard,
             LengthMm = dto.LengthMm ?? src.LengthMm, WidthMm = dto.WidthMm ?? src.WidthMm, HeightMm = dto.HeightMm ?? src.HeightMm,
-            ConnectorTypeId = dto.ConnectorTypeId ?? src.ConnectorTypeId, Comments = src.Comments, CompetitorDrawingNumber = src.CompetitorDrawingNumber,
+            ConnectorTypeId = dto.ConnectorTypeId ?? src.ConnectorTypeId, Comments = src.Comments, AfsDrain = src.AfsDrain, CompetitorDrawingNumber = src.CompetitorDrawingNumber,
             CurrentRevisionNo = position, CurrentFileId = file!.Id, CreatedById = user.Id,
         };
         db.Drawings.Add(d);

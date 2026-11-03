@@ -141,7 +141,11 @@ export default function RequestsPage() {
         sub="Every request has a ticket, live status, e-mail notifications and a full audit trail."
         actions={
           <>
-            <Button asChild variant="outline">
+            <Button
+              asChild
+              variant="outline"
+              className="border-orange-300 bg-orange-50 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+            >
               <Link to="/requests/modify">
                 <Pencil />
                 Modification request
@@ -157,8 +161,19 @@ export default function RequestsPage() {
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {cards.map(([l, v, t, I]) => (
-          <Card2 key={l} className="flex min-h-24 flex-col justify-between p-4">
+        {cards.map(([l, v, t, I], i) => (
+          <Card2
+            key={l}
+            className={cn(
+              "flex min-h-24 flex-col justify-between border-t-4 p-4",
+              [
+                "border-t-slate-400 bg-slate-50/60",
+                "border-t-blue-500 bg-blue-50/50",
+                "border-t-orange-500 bg-orange-50/50",
+                "border-t-emerald-500 bg-emerald-50/50",
+              ][i % 4],
+            )}
+          >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
                 {l}

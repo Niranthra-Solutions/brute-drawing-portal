@@ -10,7 +10,7 @@ setlocal
 set "SITEDIR=%~1"
 if "%SITEDIR%"=="" set "SITEDIR=C:\inetpub\DrawingPortal"
 set "PORT=%~2"
-if "%PORT%"=="" set "PORT=80"
+if "%PORT%"=="" set "PORT=8012"
 set "NAME=DrawingPortal"
 set "APPCMD=%windir%\system32\inetsrv\appcmd.exe"
 

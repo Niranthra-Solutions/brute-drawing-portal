@@ -29,7 +29,7 @@ import type {
   RequestDetail,
   UploadedFile,
 } from "@/lib/types";
-import { formatByMask, maskHint } from "@/lib/util";
+import { AFS_DRAWING_OPTIONS, formatByMask, maskHint } from "@/lib/util";
 import { dim, drawingNumber } from "@/lib/schemas";
 import {
   useBootstrap,
@@ -73,6 +73,7 @@ interface Values {
   h: string;
   connector: string;
   comments: string;
+  afs: string;
   competitor: string;
   notes: string;
   status: string;
@@ -102,6 +103,7 @@ const empty: Values = {
   h: "",
   connector: "",
   comments: "",
+  afs: "",
   competitor: "",
   notes: "",
   status: "Active",
@@ -388,6 +390,7 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
                   .min(1, "Select or type the end connector.")
                   .max(100),
           comments: z.string().max(2000),
+          afs: z.string(),
           competitor: z.string().max(60),
           notes: z.string().max(2000),
           status: z.string(),
@@ -455,6 +458,7 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
         h: String(d.heightMm),
         connector: d.connector,
         comments: d.comments ?? "",
+        afs: d.afsDrain ?? "",
         competitor: d.competitorDrawingNumber ?? "",
         status: d.status,
       });
@@ -549,6 +553,8 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
         comments:
           v.comments ||
           (mode === "new" ? (r.description ?? "").slice(0, 500) : ""),
+        // the AFS / drain option the requester asked for is pre-selected for the admin to confirm
+        afs: v.afs || (r.afsDrain ?? ""),
       });
     }
     form.reset(v);
@@ -697,6 +703,7 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
           ...spec,
           drawingNumber: v.number,
           comments: v.comments,
+          afsDrain: v.afs,
           competitorDrawingNumber: v.competitor,
           fileId: v.fileId,
           changeNotes: v.notes || undefined,
@@ -707,6 +714,7 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
           ...spec,
           drawingNumber: v.number,
           comments: v.comments,
+          afsDrain: v.afs,
           competitorDrawingNumber: v.competitor,
           status: v.status,
           fileId: v.fileId || undefined,
@@ -1083,6 +1091,47 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
                       mono
                       maxLength={60}
                     />
+                  </div>
+                  <div className="mt-4 grid gap-1.5">
+                    <Label className="text-xs font-bold">
+                      AFS & Drain Holes Selection
+                    </Label>
+                    <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-xl border bg-amber-50/50 px-3 py-2.5">
+                      {AFS_DRAWING_OPTIONS.map((o) => {
+                        const cur = form
+                          .watch("afs")
+                          .split(",")
+                          .filter(Boolean);
+                        const on = cur.includes(o.value);
+                        return (
+                          <label
+                            key={o.value}
+                            className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold"
+                          >
+                            <input
+                              type="checkbox"
+                              className="size-4 accent-orange-600"
+                              checked={on}
+                              onChange={() =>
+                                form.setValue(
+                                  "afs",
+                                  (on
+                                    ? cur.filter((x) => x !== o.value)
+                                    : [...cur, o.value]
+                                  ).join(","),
+                                  { shouldDirty: true },
+                                )
+                              }
+                            />
+                            {o.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Shown to users in the search results as "AFS Available…"
+                      so they know the drawing already includes it.
+                    </p>
                   </div>
                   <div className="mt-4">
                     <FTextarea

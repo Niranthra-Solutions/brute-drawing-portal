@@ -32,7 +32,8 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Notification } from "@/lib/types";
-import { ago, initials } from "@/lib/util";
+import { ago, formatByMask, initials } from "@/lib/util";
+import { useBootstrap } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/stores/auth";
 import { useUi } from "@/stores/ui";
@@ -212,15 +213,21 @@ function SidebarBody({
           asChild
           size="lg"
           variant="outline"
-          className="mt-3 h-10 w-full rounded-xl font-bold"
+          className="mt-3 h-auto min-h-10 w-full justify-start rounded-xl border-orange-300 bg-orange-50 py-2 font-bold whitespace-normal text-orange-900 hover:bg-orange-100 hover:text-orange-950"
         >
           <Link
             to="/requests/modify"
             onClick={onNavigate}
             aria-label="Request a drawing modification"
           >
-            <Pencil />
-            {!collapsed && "Request a drawing modification"}
+            <Pencil className="shrink-0" />
+            {!collapsed && (
+              <span className="text-left text-[13px] leading-tight">
+                Request a drawing
+                <br />
+                modification
+              </span>
+            )}
           </Link>
         </Button>
       )}
@@ -373,8 +380,9 @@ function Bell_() {
           <button
             key={n.id}
             className={cn(
-              "block w-full border-b px-4 py-3 text-left hover:bg-muted/50",
-              !n.isRead && "bg-brand-soft/40",
+              "relative block w-full border-b px-4 py-3 text-left hover:bg-muted/50",
+              !n.isRead &&
+                "border-l-4 border-l-orange-500 bg-orange-100 hover:bg-orange-100/80",
             )}
             onClick={async () => {
               setOpen(false);
@@ -385,8 +393,25 @@ function Bell_() {
               if (n.linkPath) nav(n.linkPath);
             }}
           >
-            <div className="text-[13px] font-bold">{n.title}</div>
-            <div className="text-xs text-muted-foreground">{n.message}</div>
+            <div
+              className={cn(
+                "flex items-center gap-2 text-[13px]",
+                n.isRead ? "font-semibold" : "font-extrabold text-orange-950",
+              )}
+            >
+              {!n.isRead && (
+                <span className="size-2 shrink-0 rounded-full bg-orange-500" />
+              )}
+              {n.title}
+            </div>
+            <div
+              className={cn(
+                "text-xs",
+                n.isRead ? "text-muted-foreground" : "text-orange-900/80",
+              )}
+            >
+              {n.message}
+            </div>
             <div className="mt-1 text-[11px] text-muted-foreground">
               {ago(n.createdAtUtc)}
             </div>
@@ -403,6 +428,7 @@ export function Shell() {
   const loc = useLocation();
   const { mobileNav, setMobileNav, collapsed } = useUi();
   const [quick, setQuick] = useState("");
+  const boot = useBootstrap();
   const first = useRef(true);
   const admin = user?.role === "Admin";
   useEffect(() => {
@@ -413,7 +439,11 @@ export function Shell() {
   const go = (e: FormEvent) => {
     e.preventDefault();
     if (quick.trim()) {
-      nav(`/search-by-number?number=${encodeURIComponent(quick.trim())}`);
+      // "25600001A", "25 600 001a" and "25-600-001-A" all become 25 600 001 A
+      const n =
+        formatByMask(quick, boot.data?.drawingNumberMask ?? "## ### ### A") ||
+        quick.trim();
+      nav(`/search-by-number?number=${encodeURIComponent(n)}`);
       setQuick("");
     }
   };

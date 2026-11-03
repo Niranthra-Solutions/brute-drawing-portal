@@ -94,6 +94,8 @@ export interface Drawing {
   updatedAtUtc: string;
   serial: number;
   isLatest: boolean;
+  afsDrain?: string | null;
+  afsDrainText?: string | null;
 }
 export interface Suggestion {
   drawing: Drawing;
@@ -144,6 +146,7 @@ export interface DrawingDetail {
   createdByName: string | null;
   matchedNote: string | null;
   lineage?: Drawing[] | null;
+  newerRevision?: string | null;
 }
 export interface UploadedFile {
   id: string;
@@ -273,6 +276,7 @@ export interface RequestDetail {
   events: RequestEvent[];
   canManage: boolean;
   isClosed: boolean;
+  afsDrain?: string | null;
 }
 export interface RequestStats {
   total: number;

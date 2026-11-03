@@ -139,6 +139,8 @@ public class Drawing : Entity
     public int HeightMm { get; set; }
     public string ConnectorTypeId { get; set; } = "";
     public string? Comments { get; set; }
+    /// <summary>AFS / drain holes present in this drawing, comma separated codes: AFS, Middle, Corner. Empty = none.</summary>
+    public string? AfsDrain { get; set; }
     public string? CompetitorDrawingNumber { get; set; }
     public DrawingStatus Status { get; set; } = DrawingStatus.Active;
     public int CurrentRevisionNo { get; set; } = 1;
@@ -202,6 +204,8 @@ public class DrawingRequest : Entity
     public DateTime? TargetDateUtc { get; set; }
     public string? Description { get; set; }
     public string? Reason { get; set; }
+    /// <summary>Requested AFS / drain-hole option: AFS, Middle or Corner.</summary>
+    public string? AfsDrain { get; set; }
     public DateTime SubmittedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? ClosedAtUtc { get; set; }

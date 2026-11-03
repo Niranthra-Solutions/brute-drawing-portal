@@ -12,7 +12,7 @@ import type {
   RequestDetail,
   UploadedFile,
 } from "@/lib/types";
-import { formatByMask } from "@/lib/util";
+import { AFS_OPTIONS, formatByMask } from "@/lib/util";
 import { optionalDim, dim } from "@/lib/schemas";
 import { useBootstrap } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ const makeSchema = (mode: "New" | "Modification") =>
       h: z.string(),
       priority: z.string(),
       changeType: z.string(),
-      targetDate: z.string(),
+      afsDrain: z.string(),
       description: z.string(),
       reason: z.string(),
       drawingId: z.string(),
@@ -78,7 +78,7 @@ const makeSchema = (mode: "New" | "Modification") =>
           });
       }
       if (mode === "New") {
-        need("category", "Select the vehicle category.");
+        // vehicle category is optional
         need("type", "Select the vehicle type.");
         need("make", "Enter the vehicle make.");
         need("model", "Enter the model.");
@@ -88,6 +88,8 @@ const makeSchema = (mode: "New" | "Modification") =>
         need("connector", "Select the end connector.");
       } else {
         need("drawingId", "Choose the drawing to modify.");
+        need("changeType", "Select the type of change.");
+        need("reason", "Enter the reason for the modification.");
       }
     });
 type Values = z.infer<ReturnType<typeof makeSchema>>;
@@ -120,7 +122,7 @@ export default function RequestFormPage({
       h: "",
       priority: "Standard",
       changeType: "",
-      targetDate: "",
+      afsDrain: "",
       description: "",
       reason: "",
       drawingId: sp.get("drawingId") ?? "",
@@ -147,6 +149,14 @@ export default function RequestFormPage({
   useEffect(() => {
     if (!b || isMod) return;
     const m = b.models.find((x) => x.id === sp.get("model"));
+    if (!m && sp.get("v") && sp.get("l"))
+      form.reset({
+        ...form.getValues(),
+        volt: sp.get("v") ?? "",
+        l: sp.get("l") ?? "",
+        w: sp.get("w") ?? "",
+        h: sp.get("h") ?? "",
+      });
     if (m)
       form.reset({
         ...form.getValues(),
@@ -271,7 +281,7 @@ export default function RequestFormPage({
         heightMm: n(v.h),
         connectorName: v.connector,
         changeType: v.changeType,
-        targetDate: v.targetDate || null,
+        afsDrain: v.afsDrain || null,
         description: v.description,
         reason: v.reason,
         attachmentFileIds: v.attachments,
@@ -397,9 +407,9 @@ export default function RequestFormPage({
               )}
               {d && drawingId && !d.isLatest && (
                 <div className="mt-3">
-                  <Advisory tone="blue" title="This is not the latest revision">
-                    Only the latest revision can be modified. Use Find Drawing
-                    and select the latest revision.
+                  <Advisory tone="blue" title="Cannot be modified">
+                    Next revision is already available with this drawing number.
+                    Use Find Drawing and select the latest revision.
                   </Advisory>
                 </div>
               )}
@@ -433,7 +443,6 @@ export default function RequestFormPage({
                       control={c}
                       name="category"
                       label="Vehicle category"
-                      required
                       placeholder="Select category"
                       options={(b?.categories ?? []).map((x) => ({
                         value: x.name,
@@ -496,6 +505,7 @@ export default function RequestFormPage({
                     control={c}
                     name="changeType"
                     label="Type of change"
+                    required
                     placeholder="Select"
                     options={CHANGE_TYPES.map((x) => ({ value: x, label: x }))}
                   />
@@ -591,14 +601,13 @@ export default function RequestFormPage({
                     label: x,
                   }))}
                 />
-                {isMod && (
-                  <FInput
-                    control={c}
-                    name="targetDate"
-                    label="Needed by (optional)"
-                    type="date"
-                  />
-                )}
+                <FSelect
+                  control={c}
+                  name="afsDrain"
+                  label="AFS & Drain Holes Selection"
+                  placeholder="Select (if required)"
+                  options={AFS_OPTIONS}
+                />
               </div>
               <FTextarea
                 control={c}
@@ -614,6 +623,7 @@ export default function RequestFormPage({
                     control={c}
                     name="reason"
                     label="Reason for modification"
+                    required
                     maxLength={2000}
                   />
                 </div>
@@ -694,8 +704,8 @@ function RevisionPicker({
     <div className="mt-4 grid gap-3">
       {groups.length > 1 && (
         <div className="text-[13px] font-bold">
-          {groups.length} vehicles use this number - select the latest revision
-          of the one to modify
+          {groups.length} vehicles use this number - only the latest revision
+          (checked across all vehicles) can be modified
         </div>
       )}
       {groups.map((g) => (
@@ -769,8 +779,15 @@ function RevisionPicker({
                       {selected === x.id ? "Selected" : "Select to modify"}
                     </Button>
                   ) : (
-                    <span className="w-[120px] text-right text-xs text-muted-foreground">
-                      Older revision
+                    <span
+                      className="max-w-[260px] text-right text-xs font-semibold text-orange-600"
+                      title="Next revision is already available with this drawing number."
+                    >
+                      Cannot be modified
+                      <span className="block font-normal text-muted-foreground">
+                        Next revision is already available with this drawing
+                        number.
+                      </span>
                     </span>
                   )}
                 </div>

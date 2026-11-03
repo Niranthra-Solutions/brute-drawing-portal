@@ -150,6 +150,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.DrawingNumber).HasMaxLength(40).IsUnicode(false);
             e.Property(x => x.AhStandard).HasMaxLength(20);
             e.Property(x => x.Comments).HasMaxLength(2000);
+            e.Property(x => x.AfsDrain).HasMaxLength(40);
             e.Property(x => x.CompetitorDrawingNumber).HasMaxLength(60);
             e.Ignore(x => x.AhLabel);
             e.HasIndex(x => x.Serial);
@@ -187,6 +188,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.ChangeType).HasMaxLength(40);
             e.Property(x => x.Description).HasMaxLength(4000);
             e.Property(x => x.Reason).HasMaxLength(2000);
+            e.Property(x => x.AfsDrain).HasMaxLength(20);
             e.Property(x => x.ClosureNote).HasMaxLength(2000);
             e.HasIndex(x => x.TicketNo).IsUnique();
             e.HasIndex(x => new { x.RequestedById, x.SubmittedAtUtc });

@@ -47,7 +47,9 @@ public sealed class SaveAhDto { [Range(1, 100000)] public int Value { get; set; 
 public sealed class SaveSettingsDto
 {
     [Required, StringLength(40)] public string NumberMask { get; set; } = "";
-    public int ToleranceLengthMm { get; set; } public int ToleranceWidthMm { get; set; } public int ToleranceHeightMm { get; set; }
+    public int ToleranceLengthMm { get; set; }
+    public int ToleranceWidthMm { get; set; }
+    public int ToleranceHeightMm { get; set; }
 }
 public sealed record SettingsDto(string NumberMask, string Example, int ToleranceLengthMm, int ToleranceWidthMm, int ToleranceHeightMm);
 
@@ -55,19 +57,19 @@ public sealed record SettingsDto(string NumberMask, string Example, int Toleranc
 public sealed record DrawingRow(
     string Id, string DrawingNumber, string Make, string MakeId, string VehicleType, string Category, string Model, string ModelId, string Capacity,
     int VoltageV, int AhValue, string AhStandard, string Connector, string ConnectorId, int LengthMm, int WidthMm, int HeightMm,
-    string? Comments, string? CompetitorDrawingNumber, DrawingStatus Status, int RevisionNo, string? FileId, string? FileName, DateTime UpdatedAtUtc, int Serial);
+    string? Comments, string? CompetitorDrawingNumber, DrawingStatus Status, int RevisionNo, string? FileId, string? FileName, DateTime UpdatedAtUtc, int Serial, string? AfsDrain = null);
 
 public sealed record DrawingDto(
     string Id, string DrawingNumber, string Make, string MakeId, string VehicleType, string Category, string Model, string ModelId, string Capacity,
     int VoltageV, string Ah, int AhValue, string AhStandard, string Connector, string ConnectorId, int LengthMm, int WidthMm, int HeightMm,
-    string? Comments, string? CompetitorDrawingNumber, string Status, string RevisionLabel, string? FileId, string? FileName, bool CanPreview, DateTime UpdatedAtUtc, int Serial, bool IsLatest = true);
+    string? Comments, string? CompetitorDrawingNumber, string Status, string RevisionLabel, string? FileId, string? FileName, bool CanPreview, DateTime UpdatedAtUtc, int Serial, bool IsLatest = true, string? AfsDrain = null, string? AfsDrainText = null);
 
 public sealed record SuggestionDto(DrawingDto Drawing, int DeltaLength, int DeltaWidth, int DeltaHeight, double FitPercent, bool SameModel, bool SameMake, bool SameAh);
 public sealed record NumberMatchesDto(IReadOnlyList<DrawingDto> Items, string? Note);
 public sealed record SearchResultDto(string Mode, IReadOnlyList<DrawingDto> Exact, IReadOnlyList<SuggestionDto> Similar, ToleranceDto Tolerance, string? Note, int TotalCandidates);
 public sealed record RevisionDto(string Id, int RevisionNo, string Label, string DrawingNumber, string? FileId, string? FileName, string? ChangeNotes, DateTime CreatedAtUtc, string? CreatedByName, string? RequestTicketNo, bool IsCurrent);
 public sealed record FileInfoDto(string Id, string Name, string ContentType, long SizeBytes, string Sha256, string Url, DateTime CreatedAtUtc, bool CanPreview);
-public sealed record DrawingDetailDto(DrawingDto Drawing, IReadOnlyList<RevisionDto> Revisions, FileInfoDto? File, DateTime CreatedAtUtc, string? CreatedByName, string? MatchedNote, IReadOnlyList<DrawingDto>? Lineage = null);
+public sealed record DrawingDetailDto(DrawingDto Drawing, IReadOnlyList<RevisionDto> Revisions, FileInfoDto? File, DateTime CreatedAtUtc, string? CreatedByName, string? MatchedNote, IReadOnlyList<DrawingDto>? Lineage = null, string? NewerRevision = null);
 
 public class DrawingInput
 {
@@ -83,6 +85,8 @@ public class DrawingInput
     /// <summary>Free-text connector. Used when no ConnectorTypeId is given; matched by name (case-insensitive) or added to master data.</summary>
     [StringLength(100)] public string? ConnectorName { get; set; }
     [StringLength(2000)] public string? Comments { get; set; }
+    /// <summary>Comma separated: AFS, Middle, Corner.</summary>
+    [StringLength(40)] public string? AfsDrain { get; set; }
     [StringLength(60)] public string? CompetitorDrawingNumber { get; set; }
 }
 public sealed class CreateDrawingDto : DrawingInput
@@ -115,8 +119,14 @@ public sealed class AddRevisionDto
 }
 public sealed class DrawingListQuery
 {
-    public string? Q { get; set; } public string? CategoryId { get; set; } public string? MakeId { get; set; } public string? ModelId { get; set; } public string? Number { get; set; } public string? FileId { get; set; }
-    public int? VoltageV { get; set; } public DrawingStatus? Status { get; set; }
+    public string? Q { get; set; }
+    public string? CategoryId { get; set; }
+    public string? MakeId { get; set; }
+    public string? ModelId { get; set; }
+    public string? Number { get; set; }
+    public string? FileId { get; set; }
+    public int? VoltageV { get; set; }
+    public DrawingStatus? Status { get; set; }
     public string Sort { get; set; } = "updated"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
 }
@@ -167,14 +177,19 @@ public sealed class CreateRequestDto
     public DateTime? TargetDate { get; set; }
     [StringLength(4000)] public string? Description { get; set; }
     [StringLength(2000)] public string? Reason { get; set; }
+    /// <summary>AFS, Middle or Corner.</summary>
+    [StringLength(20)] public string? AfsDrain { get; set; }
     public List<string> AttachmentFileIds { get; set; } = new();
 }
 public sealed class RequestListQuery
 {
-    public RequestType? Type { get; set; } public RequestStatus? Status { get; set; } public RequestPriority? Priority { get; set; }
+    public RequestType? Type { get; set; }
+    public RequestStatus? Status { get; set; }
+    public RequestPriority? Priority { get; set; }
     /// <summary>Dashboard card shortcuts: "open" (not completed / rejected) or "completed30" (completed in the last 30 days).</summary>
     public string? Scope { get; set; }
-    public string? Q { get; set; } public string Sort { get; set; } = "submitted"; public string Dir { get; set; } = "desc";
+    public string? Q { get; set; }
+    public string Sort { get; set; } = "submitted"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
 }
 public sealed record RequestListItemDto(string Id, string TicketNo, string Type, string Status, string Priority, string Title, string RequestedByName, string RequestedByEmail,
@@ -188,7 +203,7 @@ public sealed record RequestDetailDto(
     int? VoltageV, string? Ah, int? LengthMm, int? WidthMm, int? HeightMm, string? ConnectorName,
     string? ChangeType, DateTime? TargetDate, string? Description, string? Reason, DateTime SubmittedAtUtc, DateTime UpdatedAtUtc, DateTime? ClosedAtUtc,
     string? ClosureNote, string? ResultDrawingId, string? ResultDrawingNumber, DrawingDto? ResultDrawing,
-    IReadOnlyList<AttachmentDto> Attachments, IReadOnlyList<RequestEventDto> Events, bool CanManage, bool IsClosed);
+    IReadOnlyList<AttachmentDto> Attachments, IReadOnlyList<RequestEventDto> Events, bool CanManage, bool IsClosed, string? AfsDrain = null);
 public sealed class ChangeStatusDto
 {
     [Required] public RequestStatus Status { get; set; }

@@ -36,7 +36,7 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvi
             h["Cross-Origin-Opener-Policy"] = "same-origin";
             h.Remove("Server"); h.Remove("X-Powered-By");
             if (!ctx.Request.Path.StartsWithSegments("/api"))
-                h["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
+                h["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; " +
                                                "connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
             if (ctx.Request.IsHttps && !env.IsDevelopment()) h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
             if (ctx.Request.Path.StartsWithSegments("/api") && !h.ContainsKey("Cache-Control")) h["Cache-Control"] = "no-store";

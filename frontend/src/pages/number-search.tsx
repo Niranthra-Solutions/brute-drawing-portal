@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +48,10 @@ export default function NumberSearchPage() {
     mode: "onSubmit",
   });
   const number = sp.get("number");
+  // the quick-jump box in the header changes ?number= while this page is open - keep the field in step
+  useEffect(() => {
+    form.reset({ number: number ?? "" });
+  }, [number]); // eslint-disable-line react-hooks/exhaustive-deps
   const valid = !!number && isValidNumber(number, mask);
   const q = useQuery({
     queryKey: ["by-number", number],

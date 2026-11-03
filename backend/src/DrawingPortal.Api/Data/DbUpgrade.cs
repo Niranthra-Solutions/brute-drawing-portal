@@ -25,6 +25,16 @@ public static class DbUpgrade
                 }
                 if (!has) await db.Database.ExecuteSqlRawAsync($"ALTER TABLE {table} ADD COLUMN Serial INTEGER NOT NULL DEFAULT 0");
             }
+            // AFS / drain-hole columns (Drawings.AfsDrain, Requests.AfsDrain)
+            foreach (var (table, size) in new[] { ("Drawings", 40), ("Requests", 20) })
+            {
+                var conn = db.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = 'AfsDrain'";
+                if (Convert.ToInt32(await cmd.ExecuteScalarAsync()) == 0)
+                    await db.Database.ExecuteSqlRawAsync($"ALTER TABLE {table} ADD COLUMN AfsDrain TEXT NULL");
+            }
             try
             {
                 await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ModelBatteries (

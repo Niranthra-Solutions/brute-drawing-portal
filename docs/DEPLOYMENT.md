@@ -6,7 +6,8 @@ Three supported ways. **IIS on Windows Server (on-premises)** is the main one; D
 
 1. **Server prerequisites** (run CMD as Administrator):
    ```
-   dism /online /enable-feature /featurename:IIS-WebServerRole /featurename:IIS-ManagementConsole /all
+   
+   
    ```
    Install the **.NET 8 Hosting Bundle** (`dotnet-hosting-8.0.x-win.exe`), then `iisreset`.
    Database: SQL Server 2019+ **or** SQLite (no extra install; fine for a small team).

@@ -20,11 +20,6 @@ import { vehicleFromModel, useBootstrap, emptyVehicle } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Table,
   TableBody,
   TableCell,
@@ -46,18 +41,21 @@ import { FInput, FSelect } from "@/components/app/fields";
 import { VehicleFields } from "@/components/app/vehicle-fields";
 import {
   DrawingActions,
+  DrawingComment,
   DrawingNo,
   Dims,
+  VehicleCell,
   signed,
 } from "@/components/app/drawing-bits";
 
 const schema = z.object({
+  // The vehicle is optional: a search needs only Voltage, Ah rating and the tray dimensions.
   vehicle: z.object({
-    categoryId: z.string().min(1, "Select the category."),
-    makeId: z.string().min(1, "Select the make."),
-    typeId: z.string().min(1, "Select the type."),
-    modelName: z.string().min(1, "Select the model."),
-    capacity: z.string().min(1, "Select the capacity."),
+    categoryId: z.string(),
+    makeId: z.string(),
+    typeId: z.string(),
+    modelName: z.string(),
+    capacity: z.string(),
   }),
   volt: z.string().min(1, "Select a voltage."),
   ahId: z.string().min(1, "Select an Ah rating."),
@@ -94,17 +92,10 @@ export default function SearchPage() {
 
   const active = useMemo(() => {
     const a = b?.ahRatings.find((x) => x.id === sp.get("ah"));
-    if (
-      !sp.get("model") ||
-      !a ||
-      !sp.get("v") ||
-      !sp.get("l") ||
-      !sp.get("w") ||
-      !sp.get("h")
-    )
+    if (!a || !sp.get("v") || !sp.get("l") || !sp.get("w") || !sp.get("h"))
       return null;
     return {
-      modelId: sp.get("model"),
+      modelId: sp.get("model") ?? undefined,
       voltageV: sp.get("v"),
       ahValue: a.value,
       ahStandard: a.standard,
@@ -126,14 +117,22 @@ export default function SearchPage() {
     [b, modelId],
   );
   const volt = form.watch("volt");
+  // Changing from one vehicle to another (or clearing it) restarts voltage / Ah; choosing a vehicle for the first time keeps them.
+  const prevModel = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (modelId === sp.get("model") || (!modelId && sp.get("model"))) return;
-    form.setValue("volt", "");
-    form.setValue("ahId", "");
+    const was = prevModel.current;
+    prevModel.current = modelId;
+    if (was && was !== modelId) {
+      form.setValue("volt", "");
+      form.setValue("ahId", "");
+    }
   }, [modelId]); // eslint-disable-line react-hooks/exhaustive-deps
   const voltOptions = useMemo(() => {
-    if (!model || !b) return [];
-    const linked = [...new Set(model.specs.map((s) => s.voltageV))];
+    if (!b) return [];
+    // no vehicle selected -> every voltage; a vehicle -> only the voltages linked to it
+    const linked = model
+      ? [...new Set(model.specs.map((s) => s.voltageV))]
+      : [];
     const list =
       linked.length > 0
         ? b.voltages.filter((v) => linked.includes(v.valueV))
@@ -144,9 +143,10 @@ export default function SearchPage() {
     }));
   }, [model, b]);
   const ahOptions = useMemo(() => {
-    if (!model || !b || !volt) return [];
+    if (!b || !volt) return [];
+    // with a vehicle: OEM specified first, then the non-standard ratings; without one: every rating as non-standard
     const oem = new Set(
-      model.specs
+      (model?.specs ?? [])
         .filter((s) => String(s.voltageV) === volt && s.ahRatingId)
         .map((s) => s.ahRatingId as string),
     );
@@ -168,13 +168,14 @@ export default function SearchPage() {
   }, [model, b, volt]);
 
   const submit = form.handleSubmit((v) => {
-    if (!modelId) {
-      form.setError("vehicle.capacity", {
-        message: "This vehicle combination is not in master data.",
-      });
-      return;
-    }
-    setSp({ model: modelId, v: v.volt, ah: v.ahId, l: v.l, w: v.w, h: v.h });
+    setSp({
+      ...(modelId ? { model: modelId } : {}),
+      v: v.volt,
+      ah: v.ahId,
+      l: v.l,
+      w: v.w,
+      h: v.h,
+    });
   });
   const reset = () => {
     form.reset({
@@ -206,16 +207,13 @@ export default function SearchPage() {
         <form onSubmit={submit} noValidate>
           <SectionCard icon={SearchIcon} title="Vehicle & battery">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <VehicleFields onResolved={setModelId} />
+              <VehicleFields onResolved={setModelId} optional />
               <FSelect
                 control={form.control}
                 name="volt"
                 label="Voltage (V)"
                 required
-                disabled={!model}
-                placeholder={
-                  model ? "Select voltage" : "Select vehicle details first"
-                }
+                placeholder="Select voltage"
                 options={voltOptions}
                 onValueChange={() => form.setValue("ahId", "")}
               />
@@ -224,14 +222,8 @@ export default function SearchPage() {
                 name="ahId"
                 label="Ah rating"
                 required
-                disabled={!model || !volt}
-                placeholder={
-                  !model
-                    ? "Select vehicle details first"
-                    : !volt
-                      ? "Select voltage first"
-                      : "Select Ah"
-                }
+                disabled={!volt}
+                placeholder={volt ? "Select Ah" : "Select voltage first"}
                 options={ahOptions}
               />
             </div>
@@ -335,7 +327,7 @@ export default function SearchPage() {
           )}
 
           {r.exact.length > 0 && (
-            <Card2 className="mb-6 overflow-hidden">
+            <Card2 className="mb-6 overflow-x-auto">
               <div className="flex items-center justify-between border-b px-5 py-4">
                 <div className="flex items-center gap-2 text-[15px] font-extrabold">
                   Standard drawing
@@ -355,7 +347,7 @@ export default function SearchPage() {
                     {[
                       "ID",
                       "Drawing no.",
-                      "Model",
+                      "Vehicle",
                       "Ah",
                       "V",
                       "Connector",
@@ -374,7 +366,10 @@ export default function SearchPage() {
                 </TableHeader>
                 <TableBody>
                   {r.exact.map((d) => (
-                    <TableRow key={d.id}>
+                    <TableRow
+                      key={d.id}
+                      className="border-l-4 border-l-emerald-500 bg-emerald-50/40 hover:bg-emerald-50"
+                    >
                       <TableCell className="px-4 font-mono text-xs text-muted-foreground">
                         {d.serial}
                       </TableCell>
@@ -385,10 +380,7 @@ export default function SearchPage() {
                         </Pill>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        {d.make} {d.model}
-                        <div className="text-xs text-muted-foreground">
-                          {d.capacity}
-                        </div>
+                        <VehicleCell d={d} />
                       </TableCell>
                       <TableCell className="px-4">{d.ah}</TableCell>
                       <TableCell className="px-4">{d.voltageV}</TableCell>
@@ -396,8 +388,8 @@ export default function SearchPage() {
                       <TableCell className="px-4">
                         <Dims d={d} />
                       </TableCell>
-                      <TableCell className="px-4 text-muted-foreground">
-                        {d.comments ?? "—"}
+                      <TableCell className="px-4">
+                        <DrawingComment d={d} />
                       </TableCell>
                       <TableCell className="px-4">
                         <DrawingActions d={d} />
@@ -410,7 +402,7 @@ export default function SearchPage() {
           )}
 
           {r.similar.length > 0 && (
-            <Card2 className="overflow-hidden">
+            <Card2 className="overflow-x-auto">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-4">
                 <div className="flex items-center gap-2 text-[15px] font-extrabold">
                   Similar drawings
@@ -429,11 +421,12 @@ export default function SearchPage() {
                     {[
                       "ID",
                       "Drawing no.",
+                      "Vehicle",
                       "Ah",
                       "Connector",
                       "L × W × H (mm)",
                       "Δ vs your input (mm)",
-                      "Fit",
+                      "Comments",
                       "",
                     ].map((h) => (
                       <TableHead
@@ -452,21 +445,21 @@ export default function SearchPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: i * 0.03 }}
-                      className="border-b transition-colors hover:bg-muted/50"
+                      className={`border-b border-l-4 transition-colors hover:bg-muted/50 ${closeness(s)}`}
                     >
                       <TableCell className="px-4 font-mono text-xs text-muted-foreground">
                         {s.drawing.serial}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <DrawingNo>{s.drawing.drawingNumber}</DrawingNo>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          {s.drawing.make} {s.drawing.model}{" "}
-                          {s.sameModel && (
-                            <Pill tone="green" dot={false}>
-                              same model
-                            </Pill>
-                          )}
-                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <VehicleCell d={s.drawing} />
+                        {s.sameModel && (
+                          <Pill tone="green" dot={false}>
+                            same model
+                          </Pill>
+                        )}
                       </TableCell>
                       <TableCell className="px-4">
                         {s.drawing.ah}{" "}
@@ -487,7 +480,7 @@ export default function SearchPage() {
                         {signed(s.deltaHeight)}
                       </TableCell>
                       <TableCell className="px-4">
-                        <FitBar s={s} tol={r.tolerance} />
+                        <DrawingComment d={s.drawing} />
                       </TableCell>
                       <TableCell className="px-4">
                         <DrawingActions d={s.drawing} />
@@ -509,7 +502,7 @@ export default function SearchPage() {
             </div>
             <Button asChild>
               <Link
-                to={`/requests/new${modelId ? `?model=${modelId}&v=${active?.voltageV ?? ""}&l=${active?.lengthMm ?? ""}&w=${active?.widthMm ?? ""}&h=${active?.heightMm ?? ""}` : ""}`}
+                to={`/requests/new?${modelId ? `model=${modelId}&` : ""}v=${active?.voltageV ?? ""}&l=${active?.lengthMm ?? ""}&w=${active?.widthMm ?? ""}&h=${active?.heightMm ?? ""}`}
               >
                 <Plus />
                 Request new drawing
@@ -522,79 +515,19 @@ export default function SearchPage() {
   );
 }
 
-/** Fit % with a simple hover explanation. Same formula as the server: 1 - (|dL|/tolL + |dW|/tolW + |dH|/tolH) / 3. */
-function FitBar({
-  s,
-  tol,
-}: {
-  s: {
-    fitPercent: number;
-    deltaLength: number;
-    deltaWidth: number;
-    deltaHeight: number;
-  };
-  tol: { lengthMm: number; widthMm: number; heightMm: number };
+/** Colour band for a similar drawing: green = same size (only the Ah differs), amber = a little off, orange = near the tolerance edge. */
+function closeness(s: {
+  deltaLength: number;
+  deltaWidth: number;
+  deltaHeight: number;
+  sameAh: boolean;
 }) {
-  const parts = [
-    ["Length", s.deltaLength, tol.lengthMm],
-    ["Width", s.deltaWidth, tol.widthMm],
-    ["Height", s.deltaHeight, tol.heightMm],
-  ] as const;
-  const used = parts.map(([, d, t]) => Math.min(Math.abs(d) / t, 1) * 100);
-  const avg = used.reduce((a, x) => a + x, 0) / 3;
-  const f1 = (n: number) => String(Math.round(n * 10) / 10);
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div
-          className="flex min-w-32 cursor-help items-center gap-2 text-[12.5px] font-bold"
-          tabIndex={0}
-          aria-label={`Fit ${s.fitPercent} percent. Hover to see how it is calculated.`}
-        >
-          {s.fitPercent}%
-          <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full bg-brand"
-              style={{ width: `${s.fitPercent}%` }}
-            />
-          </div>
-        </div>
-      </TooltipTrigger>
-      <TooltipContent
-        side="left"
-        className="block w-72 p-3 text-left text-[12px] leading-snug"
-      >
-        <div className="text-[13px] font-bold">Fit {s.fitPercent}%</div>
-        <p className="mt-1 opacity-80">
-          100% means this drawing is exactly your size. The more it differs, the
-          lower the fit.
-        </p>
-        <div className="mt-2.5 mb-1 text-[10.5px] font-bold tracking-wide uppercase opacity-70">
-          Difference from your size
-        </div>
-        <div className="grid grid-cols-[auto_1fr_auto] gap-x-3 gap-y-1">
-          {parts.map(([n, d, t], k) => (
-            <div key={n} className="contents">
-              <span>{n}</span>
-              <span className="font-mono">
-                {d === 0 ? "same" : `${signed(d)} mm`}{" "}
-                <span className="opacity-60">(allowed ±{t})</span>
-              </span>
-              <span className="text-right font-mono">{f1(used[k])}%</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-2 border-t border-white/25 pt-2">
-          <div className="flex justify-between">
-            <span>Average difference</span>
-            <span className="font-mono">{f1(avg)}%</span>
-          </div>
-          <div className="mt-0.5 flex justify-between font-bold">
-            <span>Fit = 100% − {f1(avg)}%</span>
-            <span className="font-mono">{s.fitPercent}%</span>
-          </div>
-        </div>
-      </TooltipContent>
-    </Tooltip>
+  const worst = Math.max(
+    Math.abs(s.deltaLength),
+    Math.abs(s.deltaWidth),
+    Math.abs(s.deltaHeight),
   );
+  if (worst === 0) return "border-l-emerald-500 bg-emerald-50/40";
+  if (worst <= 5) return "border-l-amber-400 bg-amber-50/40";
+  return "border-l-orange-500 bg-orange-50/40";
 }

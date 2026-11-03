@@ -9,8 +9,11 @@ import { FSelect } from "./fields";
  */
 export function VehicleFields({
   onResolved,
+  optional = false,
 }: {
   onResolved?: (modelId: string | undefined) => void;
+  /** Drawing search: the vehicle is not mandatory (voltage, Ah and tray size are enough). */
+  optional?: boolean;
 }) {
   const { data: b } = useBootstrap();
   const form = useFormContext<{ vehicle: VehicleSel }>();
@@ -38,7 +41,7 @@ export function VehicleFields({
         control={control}
         name="vehicle.categoryId"
         label="Vehicle category"
-        required
+        required={!optional}
         placeholder="Select category"
         options={(b?.categories ?? []).map((x) => ({
           value: x.id,
@@ -50,7 +53,7 @@ export function VehicleFields({
         control={control}
         name="vehicle.makeId"
         label="Vehicle make"
-        required
+        required={!optional}
         placeholder="Select make"
         disabled={!sel.categoryId}
         options={c.makes.map((x) => ({ value: x.id, label: x.name }))}
@@ -60,7 +63,7 @@ export function VehicleFields({
         control={control}
         name="vehicle.typeId"
         label="Vehicle type"
-        required
+        required={!optional}
         placeholder="Select type"
         disabled={!sel.makeId}
         options={c.types.map((x) => ({ value: x.id, label: x.name }))}
@@ -70,7 +73,7 @@ export function VehicleFields({
         control={control}
         name="vehicle.modelName"
         label="Model no."
-        required
+        required={!optional}
         placeholder="Select model"
         disabled={!sel.typeId}
         options={c.modelNames.map((x) => ({ value: x, label: x }))}
@@ -80,7 +83,7 @@ export function VehicleFields({
         control={control}
         name="vehicle.capacity"
         label="Vehicle capacity"
-        required
+        required={!optional}
         placeholder="Select capacity"
         disabled={!sel.modelName}
         options={c.capacities.map((x) => ({ value: x, label: x }))}

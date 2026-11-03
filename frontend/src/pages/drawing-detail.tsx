@@ -62,6 +62,7 @@ export default function DrawingDetailPage() {
         heightMm: d.heightMm,
         connectorTypeId: d.connectorId,
         comments: d.comments,
+        afsDrain: d.afsDrain ?? null,
         competitorDrawingNumber: d.competitorDrawingNumber,
         status: s,
       });
@@ -78,6 +79,12 @@ export default function DrawingDetailPage() {
   const { drawing: d, revisions, file } = q.data;
   return (
     <>
+      {q.data.newerRevision && (
+        <div className="mb-4 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-[13px] font-semibold text-orange-900">
+          Cannot be modified — next revision ({q.data.newerRevision}) is already
+          available with this drawing number.
+        </div>
+      )}
       <PageHeader
         eyebrow={`${d.category} · ${d.vehicleType}`}
         admin={admin}
@@ -339,6 +346,7 @@ export default function DrawingDetailPage() {
             <SpecRow label="Competitor drawing" mono>
               {d.competitorDrawingNumber ?? "—"}
             </SpecRow>
+            <SpecRow label="AFS & drain holes">{d.afsDrainText ?? "—"}</SpecRow>
             <SpecRow label="Comments">{d.comments ?? "—"}</SpecRow>
           </SpecCard>
           {file && (
