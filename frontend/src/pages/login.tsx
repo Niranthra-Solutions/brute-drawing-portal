@@ -17,6 +17,7 @@ import { FInput } from "@/components/app/fields";
 import { FormError, Spinner, errMsg } from "@/components/app/common";
 import { cn } from "@/lib/utils";
 import { PoweredBy } from "@/components/app/powered-by";
+import { TrayShowcase } from "@/components/app/tray-showcase";
 
 const STEPS = [
   "Search the drawing by vehicle, battery and tray size",
@@ -24,17 +25,6 @@ const STEPS = [
   "No match? Raise a request in one standard form",
   "Engineering uploads it — you are notified instantly",
 ];
-const draw = (delay: number) => ({
-  initial: { pathLength: 0, opacity: 0 },
-  animate: { pathLength: 1, opacity: 1 },
-  transition: { duration: 1.4, delay, ease: "easeOut" as const },
-});
-const fade = (delay: number) => ({
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  transition: { duration: 0.5, delay },
-});
-
 function Hero() {
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -73,112 +63,7 @@ function Hero() {
           modification or new-drawing requests with full traceability.
         </p>
       </motion.div>
-      <div
-        aria-hidden="true"
-        className="relative z-10 my-4 aspect-[360/175] overflow-hidden rounded-2xl border border-white/10 bg-[#14171b] [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] [background-size:20px_20px]"
-      >
-        <svg
-          className="absolute inset-0 size-full"
-          viewBox="0 0 360 175"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <g fill="none" strokeLinejoin="round">
-            <motion.rect
-              x="52"
-              y="48"
-              width="170"
-              height="82"
-              rx="3"
-              stroke="#E06A2C"
-              strokeWidth="1.6"
-              {...draw(0)}
-            />
-            <motion.path
-              d="M52 70h170M52 108h170M110 48v82M165 48v82"
-              stroke="#7B8794"
-              strokeWidth="1"
-              {...draw(0.35)}
-            />
-            <motion.path
-              d="M222 48l36-18v82l-36 18M52 48l36-18h170"
-              stroke="#5FA850"
-              strokeWidth="1.6"
-              {...draw(0.7)}
-            />
-          </g>
-          {[
-            [52, 48],
-            [222, 48],
-            [222, 130],
-            [52, 130],
-          ].map(([x, y], n) => (
-            <motion.circle
-              key={n}
-              cx={x}
-              cy={y}
-              r="3"
-              fill="#E06A2C"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                delay: 1.4 + n * 0.15,
-                type: "spring",
-                stiffness: 300,
-              }}
-            />
-          ))}
-          <motion.g
-            stroke="#9AA4AF"
-            fill="#C9D1D9"
-            fontSize="10"
-            fontFamily="IBM Plex Mono,monospace"
-            {...fade(2.05)}
-          >
-            <path d="M52 146h170M52 142v8M222 142v8" />
-            <text x="118" y="159" stroke="none">
-              600 mm
-            </text>
-          </motion.g>
-          <motion.g
-            stroke="#9AA4AF"
-            fill="#C9D1D9"
-            fontSize="10"
-            fontFamily="IBM Plex Mono,monospace"
-            {...fade(2.25)}
-          >
-            <path d="M36 48v82M32 48h8M32 130h8" />
-            <text x="6" y="92" stroke="none" transform="rotate(-90 14 92)">
-              400 mm
-            </text>
-          </motion.g>
-          <motion.g {...fade(2.5)}>
-            <rect
-              x="238"
-              y="140"
-              width="104"
-              height="22"
-              rx="11"
-              fill="#5FA850"
-            />
-            <text
-              x="290"
-              y="155"
-              textAnchor="middle"
-              fill="#fff"
-              fontSize="10"
-              fontWeight="700"
-              fontFamily="Inter,sans-serif"
-            >
-              FIT VERIFIED
-            </text>
-          </motion.g>
-        </svg>
-        <motion.div
-          className="pointer-events-none absolute inset-x-0 h-11 bg-gradient-to-b from-transparent via-brand/30 to-transparent"
-          animate={{ y: [-50, 200, -50] }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
+      <TrayShowcase />
       <div className="relative z-10 mb-3.5 rounded-2xl border border-white/10 bg-white/[.04] px-[18px] py-3.5">
         <div className="mb-3 text-[10.5px] font-bold tracking-wide text-white/45 uppercase">
           How it works

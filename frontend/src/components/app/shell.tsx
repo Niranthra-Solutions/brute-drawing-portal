@@ -213,21 +213,15 @@ function SidebarBody({
           asChild
           size="lg"
           variant="outline"
-          className="mt-3 h-auto min-h-10 w-full justify-start rounded-xl border-orange-300 bg-orange-50 py-2 font-bold whitespace-normal text-orange-900 hover:bg-orange-100 hover:text-orange-950"
+          className="mt-3 h-10 w-full rounded-xl border-orange-300 bg-orange-50 font-bold text-orange-900 hover:bg-orange-100 hover:text-orange-950"
         >
           <Link
             to="/requests/modify"
             onClick={onNavigate}
             aria-label="Request a drawing modification"
           >
-            <Pencil className="shrink-0" />
-            {!collapsed && (
-              <span className="text-left text-[13px] leading-tight">
-                Request a drawing
-                <br />
-                modification
-              </span>
-            )}
+            <Pencil />
+            {!collapsed && "Modification request"}
           </Link>
         </Button>
       )}
