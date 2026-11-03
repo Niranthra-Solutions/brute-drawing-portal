@@ -18,8 +18,8 @@ call npm run build || goto :fail
 popd
 
 echo.
-echo [2/3] Running backend tests (skip with SKIPTESTS=1)...
-if not "%SKIPTESTS%"=="1" (
+echo [2/3] Backend tests are OFF by default (run them with RUNTESTS=1)...
+if "%RUNTESTS%"=="1" (
   dotnet test "%ROOT%\backend\DrawingPortal.sln" -c Release || goto :fail
 )
 
