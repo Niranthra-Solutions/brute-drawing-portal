@@ -45,14 +45,14 @@ export function FilePreview({
     <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden p-0 sm:max-w-5xl">
         {target && (
-          <div className="flex max-h-[92vh] flex-col">
+          <div className="flex max-h-[92vh] min-w-0 flex-col">
             <DialogHeader className="border-b px-5 py-4">
               <DialogTitle>{target.title}</DialogTitle>
               <DialogDescription>
                 Quick view — download the file for the original.
               </DialogDescription>
             </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-auto p-4">
+            <div className="min-h-0 min-w-0 flex-1 overflow-auto p-4">
               {kind === "video" && <VideoView t={target} />}
               {kind === "xlsx" && <SheetsView t={target} />}
               {kind === "pptx" && <SlidesView t={target} />}
@@ -140,11 +140,12 @@ function SheetsView({ t }: { t: PreviewTarget }) {
   const cols = Math.max(1, ...s.rows.map((r) => r.length));
   return (
     <div>
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex max-w-full gap-1.5 overflow-x-auto pb-1">
         {data.map((x, k) => (
           <Button
             key={x.name + k}
             size="sm"
+            className="shrink-0"
             variant={k === i ? "default" : "outline"}
             onClick={() => setI(k)}
           >
@@ -152,7 +153,7 @@ function SheetsView({ t }: { t: PreviewTarget }) {
           </Button>
         ))}
       </div>
-      <div className="overflow-auto rounded-lg border">
+      <div className="max-h-[60vh] max-w-full overflow-auto rounded-lg border">
         <table className="w-full border-collapse text-xs">
           <tbody>
             {s.rows.map((r, ri) => (
