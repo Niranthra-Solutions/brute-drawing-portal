@@ -1,0 +1,19 @@
+frontend/src/pages/dashboard.tsx
+  h_51a00495fb6020 287
+  h_51a00495fb6020 285-286,288
+frontend/src/components/app/shell.tsx
+  h_51a00495fb6020 216,231-235
+frontend/src/pages/requests.tsx
+  h_51a00495fb6020 147,154-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1524c81a88a9714c9497acc3b15efba7a36e2579",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
