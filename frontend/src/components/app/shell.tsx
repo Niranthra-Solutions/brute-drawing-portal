@@ -213,7 +213,7 @@ function SidebarBody({
           asChild
           size="lg"
           variant="outline"
-          className="mt-3 h-10 w-full rounded-xl border-orange-300 bg-orange-50 font-bold text-orange-900 hover:bg-orange-100 hover:text-orange-950"
+          className="mt-3 h-10 w-full rounded-xl font-bold border-0 bg-[#E8703A] text-white shadow-sm hover:bg-[#D4602C] hover:text-white"
         >
           <Link
             to="/requests/modify"
@@ -228,7 +228,11 @@ function SidebarBody({
       <Button
         asChild
         size="lg"
-        className="mt-3 h-10 w-full rounded-xl font-bold"
+        className={cn(
+          "mt-3 h-10 w-full rounded-xl font-bold",
+          !admin &&
+            "border-0 bg-[#3A9626] text-white shadow-sm hover:bg-[#2F7F1E] hover:text-white",
+        )}
       >
         {admin ? (
           <Link

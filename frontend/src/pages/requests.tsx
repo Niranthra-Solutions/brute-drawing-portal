@@ -144,14 +144,17 @@ export default function RequestsPage() {
             <Button
               asChild
               variant="outline"
-              className="border-orange-300 bg-orange-50 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+              className="border-0 bg-[#E8703A] text-white shadow-sm hover:bg-[#D4602C] hover:text-white"
             >
               <Link to="/requests/modify">
                 <Pencil />
                 Modification request
               </Link>
             </Button>
-            <Button asChild>
+            <Button
+              asChild
+              className="border-0 bg-[#3A9626] text-white shadow-sm hover:bg-[#2F7F1E] hover:text-white"
+            >
               <Link to="/requests/new">
                 <Plus />
                 New drawing request

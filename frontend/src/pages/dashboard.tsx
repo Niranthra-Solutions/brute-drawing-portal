@@ -282,7 +282,10 @@ export default function DashboardPage() {
               title="No requests yet"
               action={
                 !admin && (
-                  <Button asChild>
+                  <Button
+                    asChild
+                    className="border-0 bg-[#3A9626] text-white shadow-sm hover:bg-[#2F7F1E] hover:text-white"
+                  >
                     <Link to="/requests/new">
                       <Plus />
                       Raise a request
