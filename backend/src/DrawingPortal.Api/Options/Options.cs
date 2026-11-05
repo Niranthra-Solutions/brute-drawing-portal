@@ -42,11 +42,13 @@ public sealed class SmtpOptions
 {
     public string Host { get; set; } = "smtp.example.local";
     public int Port { get; set; } = 587;
+    /// <summary>true = require STARTTLS. false = plain connection (no TLS at all), e.g. an internal relay on port 25.</summary>
     public bool UseStartTls { get; set; } = true;
     /// <summary>Online CRL/OCSP lookup. Off by default: the certificate chain and host name are still validated, but a firewall that blocks revocation servers will not break mail.</summary>
     public bool CheckCertificateRevocation { get; set; }
-    public string Username { get; set; } = "dummy-user";
-    public string Password { get; set; } = "dummy-password";
+    /// <summary>Leave empty for an internal relay that needs no sign-in (no authentication is attempted).</summary>
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
 }
 
 public sealed class EmailOptions

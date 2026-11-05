@@ -48,7 +48,7 @@ public sealed class SmtpEmailTransport(IOptions<EmailOptions> o) : IEmailTranspo
     {
         var s = o.Value.Smtp;
         using var client = new SmtpClient { Timeout = 20000, CheckCertificateRevocation = s.CheckCertificateRevocation };
-        await client.ConnectAsync(s.Host, s.Port, s.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, ct);
+        await client.ConnectAsync(s.Host, s.Port, s.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.None, ct);
         if (!string.IsNullOrEmpty(s.Username)) await client.AuthenticateAsync(s.Username, s.Password, ct);
         await client.SendAsync(FileEmailTransport.Build(mail, o.Value), ct);
         await client.DisconnectAsync(true, ct);
