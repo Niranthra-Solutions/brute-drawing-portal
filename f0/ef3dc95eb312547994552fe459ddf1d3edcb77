@@ -1,0 +1,16 @@
+backend/src/DrawingPortal.Api/Options/Options.cs
+  h_51a00495fb6020 45,49-51
+backend/src/DrawingPortal.Api/Services/EmailDelivery.cs
+  h_51a00495fb6020 51,91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f0ef3dc95eb312547994552fe459ddf1d3edcb77",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
