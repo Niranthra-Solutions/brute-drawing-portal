@@ -222,6 +222,16 @@ public sealed class BulkImportController(IBulkImportService bulk) : ApiBase
     public Task<BulkJobDto> Start(IFormFile? file, [FromForm] bool skipDuplicates = true, [FromForm] bool autoCreateMaster = true, CancellationToken ct = default) =>
         bulk.StartAsync(file ?? throw ApiException.BadRequest("Choose an Excel file.", "file"), skipDuplicates, autoCreateMaster, ct);
 
+    /// <summary>One drawing file of a bulk upload (the browser sends them a few at a time). The file name carries the drawing number: "25 600 002 B(48V-775 AH).pdf".</summary>
+    [HttpPost("files"), EnableRateLimiting("bulk-upload"), RequestSizeLimit(60_000_000)]
+    public Task<BulkFileUploadDto> UploadFile(IFormFile? file, CancellationToken ct) =>
+        bulk.UploadFileAsync(file ?? throw ApiException.BadRequest("Choose a file.", "file"), ct);
+
+    /// <summary>Dry run: which Excel rows have their drawing file, which are missing it. Saves nothing.</summary>
+    [HttpPost("check"), RequestSizeLimit(15_000_000)]
+    public Task<BulkCheckDto> Check(IFormFile? file, CancellationToken ct) =>
+        bulk.CheckAsync(file ?? throw ApiException.BadRequest("Choose an Excel file.", "file"), ct);
+
     [HttpGet] public Task<IReadOnlyList<BulkJobDto>> List(CancellationToken ct) => bulk.ListAsync(ct);
     [HttpGet("{id}")] public Task<BulkJobDto> Get(string id, CancellationToken ct) => bulk.GetAsync(id, ct);
     [HttpGet("{id}/errors")] public Task<IReadOnlyList<BulkErrorDto>> Errors(string id, CancellationToken ct) => bulk.ErrorsAsync(id, ct);

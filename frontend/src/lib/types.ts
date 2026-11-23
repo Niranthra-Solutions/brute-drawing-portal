@@ -331,6 +331,33 @@ export interface BulkJob {
   startedAtUtc: string | null;
   finishedAtUtc: string | null;
 }
+export interface BulkFileUpload {
+  id: string;
+  name: string;
+  drawingNumber: string;
+  voltageV: number | null;
+  ah: string | null;
+  alreadyUploaded: boolean;
+  note: string | null;
+}
+export interface BulkCheck {
+  totalRows: number;
+  readyRows: number;
+  missingCount: number;
+  missing: {
+    rowNumber: number;
+    drawingNumber: string;
+    expectedFileName: string;
+  }[];
+  invalidCount: number;
+  invalid: {
+    rowNumber: number;
+    drawingNumber: string | null;
+    message: string;
+  }[];
+  unusedCount: number;
+  unusedFiles: string[];
+}
 export interface Dashboard {
   totalDrawings: number;
   activeDrawings: number;

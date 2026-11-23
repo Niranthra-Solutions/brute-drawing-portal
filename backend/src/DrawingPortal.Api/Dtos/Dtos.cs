@@ -47,9 +47,7 @@ public sealed class SaveAhDto { [Range(1, 100000)] public int Value { get; set; 
 public sealed class SaveSettingsDto
 {
     [Required, StringLength(40)] public string NumberMask { get; set; } = "";
-    public int ToleranceLengthMm { get; set; }
-    public int ToleranceWidthMm { get; set; }
-    public int ToleranceHeightMm { get; set; }
+    public int ToleranceLengthMm { get; set; } public int ToleranceWidthMm { get; set; } public int ToleranceHeightMm { get; set; }
 }
 public sealed record SettingsDto(string NumberMask, string Example, int ToleranceLengthMm, int ToleranceWidthMm, int ToleranceHeightMm);
 
@@ -119,14 +117,8 @@ public sealed class AddRevisionDto
 }
 public sealed class DrawingListQuery
 {
-    public string? Q { get; set; }
-    public string? CategoryId { get; set; }
-    public string? MakeId { get; set; }
-    public string? ModelId { get; set; }
-    public string? Number { get; set; }
-    public string? FileId { get; set; }
-    public int? VoltageV { get; set; }
-    public DrawingStatus? Status { get; set; }
+    public string? Q { get; set; } public string? CategoryId { get; set; } public string? MakeId { get; set; } public string? ModelId { get; set; } public string? Number { get; set; } public string? FileId { get; set; }
+    public int? VoltageV { get; set; } public DrawingStatus? Status { get; set; }
     public string Sort { get; set; } = "updated"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
 }
@@ -183,13 +175,10 @@ public sealed class CreateRequestDto
 }
 public sealed class RequestListQuery
 {
-    public RequestType? Type { get; set; }
-    public RequestStatus? Status { get; set; }
-    public RequestPriority? Priority { get; set; }
+    public RequestType? Type { get; set; } public RequestStatus? Status { get; set; } public RequestPriority? Priority { get; set; }
     /// <summary>Dashboard card shortcuts: "open" (not completed / rejected) or "completed30" (completed in the last 30 days).</summary>
     public string? Scope { get; set; }
-    public string? Q { get; set; }
-    public string Sort { get; set; } = "submitted"; public string Dir { get; set; } = "desc";
+    public string? Q { get; set; } public string Sort { get; set; } = "submitted"; public string Dir { get; set; } = "desc";
     public int Page { get; set; } = 1; public int PageSize { get; set; } = 25;
 }
 public sealed record RequestListItemDto(string Id, string TicketNo, string Type, string Status, string Priority, string Title, string RequestedByName, string RequestedByEmail,
@@ -221,5 +210,10 @@ public sealed record AuditDto(string Id, DateTime CreatedAtUtc, string ActorEmai
 public sealed class AuditQuery { public string? Q { get; set; } public string? EntityType { get; set; } public string? Action { get; set; } public DateTime? From { get; set; } public DateTime? To { get; set; } public int Page { get; set; } = 1; public int PageSize { get; set; } = 50; }
 public sealed record BulkJobDto(string Id, string Status, string FileName, int TotalRows, int ProcessedRows, int CreatedCount, int SkippedCount, int ErrorCount, string? FailureMessage, bool SkipDuplicates, bool AutoCreateMaster, DateTime CreatedAtUtc, DateTime? StartedAtUtc, DateTime? FinishedAtUtc);
 public sealed record BulkErrorDto(int RowNumber, string? DrawingNumber, string Message);
+/// <summary>Result of one file in the bulk file upload: what the portal read from its name.</summary>
+public sealed record BulkFileUploadDto(string Id, string Name, string DrawingNumber, int? VoltageV, string? Ah, bool AlreadyUploaded, string? Note);
+public sealed record BulkMissingFileDto(int RowNumber, string DrawingNumber, string ExpectedFileName);
+/// <summary>Dry run of an Excel against the uploaded files: nothing is saved.</summary>
+public sealed record BulkCheckDto(int TotalRows, int ReadyRows, int MissingCount, IReadOnlyList<BulkMissingFileDto> Missing, int InvalidCount, IReadOnlyList<BulkErrorDto> Invalid, int UnusedCount, IReadOnlyList<string> UnusedFiles);
 public sealed record DashboardDto(int TotalDrawings, int ActiveDrawings, int ArchivedDrawings, int AddedThisWeek, RequestStatsDto Requests, IReadOnlyList<RequestListItemDto> Recent, IReadOnlyList<WeeklyPointDto> Turnaround, IReadOnlyList<AuditDto> Activity);
 public sealed record WeeklyPointDto(string Label, double AvgDays, int Closed);

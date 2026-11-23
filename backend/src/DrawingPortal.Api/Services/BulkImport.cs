@@ -26,15 +26,18 @@ public interface IBulkImportService
     Task<BulkJobDto> GetAsync(string id, CancellationToken ct);
     Task<IReadOnlyList<BulkErrorDto>> ErrorsAsync(string id, CancellationToken ct);
     byte[] BuildTemplate();
+    Task<BulkFileUploadDto> UploadFileAsync(IFormFile file, CancellationToken ct);
+    Task<BulkCheckDto> CheckAsync(IFormFile file, CancellationToken ct);
 }
 
 /// <summary>
-/// Admin uploads an .xlsx; each row describes one drawing and carries the URL that the "Upload drawing" screen generated for its file.
+/// Admin first uploads the drawing files in bulk (file name = drawing number, e.g. "25 600 002 B(48V-775 AH).pdf"), then an .xlsx with one row per drawing.
+/// A row is joined to its file by drawing number + voltage + Ah (or by the DrawingUrl column, when one is given); rows whose file is missing are reported so the admin can upload it and import again.
 /// Processing runs on a dedicated background worker (one job at a time): the sheet is STREAMED (never fully loaded), rows are validated in memory
 /// against pre-loaded master data, and inserted in batches with a short pause between batches so interactive traffic is never starved.
 /// </summary>
 public sealed class BulkImportService(AppDbContext db, ISettingsService settings, INotifier notifier, IAuditService audit, ICurrentUser me,
-    BulkImportQueue queue, ICacheVersion versions, IOptions<BulkOptions> bulk, IOptions<StorageOptions> storage, IWebHostEnvironment env, ILogger<BulkImportService> log) : IBulkImportService
+    BulkImportQueue queue, ICacheVersion versions, IFileStorage storageService, IOptions<BulkOptions> bulk, IOptions<StorageOptions> storage, IWebHostEnvironment env, ILogger<BulkImportService> log) : IBulkImportService
 {
     private static readonly Regex FileIdInUrl = new(@"/files/(fil_[a-z0-9]{21})(?:[/?#]|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
     private static readonly Regex AhPattern = new(@"^\s*(\d{1,6})\s*(?:\(\s*([A-Za-z0-9 ]{1,20})\s*\))?\s*$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
@@ -68,12 +71,81 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
     public async Task<IReadOnlyList<BulkErrorDto>> ErrorsAsync(string id, CancellationToken ct) =>
         await db.BulkErrors.AsNoTracking().Where(e => e.JobId == id).OrderBy(e => e.RowNumber).Take(5000).Select(e => new BulkErrorDto(e.RowNumber, e.DrawingNumber, e.Message)).ToListAsync(ct);
 
+    // ------------------------------------------------------------------ bulk file upload + dry-run check
+    public async Task<BulkFileUploadDto> UploadFileAsync(IFormFile file, CancellationToken ct)
+    {
+        var display = FileRules.SafeDisplayName(file.FileName);
+        var parsed = DrawingFileName.Parse(display);
+        var s = await settings.GetAsync(ct);
+        if (parsed is null || !s.Format.IsMatch(parsed.Number))
+            throw ApiException.BadRequest($"The file name must start with the drawing number, for example \"25 600 002 B(48V-775 AH).pdf\" (drawing number format {s.Format.Mask}).", "file");
+        var stored = await storageService.SaveDrawingKeepingNameAsync(file, me.Id, ct);
+        string? note = parsed.VoltageV is null || parsed.Ah is null ? "No (voltage-Ah) in the file name: this file will be used for every row of this drawing number that has no file of its own." : null;
+        var ahText = parsed.Ah is null ? null : DrawingMapper.AhLabel(parsed.Ah.Value, parsed.Standard);
+        return new BulkFileUploadDto(stored.Id, display, parsed.Number, parsed.VoltageV, ahText, stored.WasExisting, note);
+    }
+
+    private async Task<DrawingFileIndex> BuildFileIndexAsync(CancellationToken ct) =>
+        DrawingFileIndex.Build((await db.Files.AsNoTracking().Where(f => f.Kind == FileKind.Drawing).Select(f => new { f.Id, f.OriginalName, f.CreatedAtUtc }).ToListAsync(ct))
+            .Select(f => (f.Id, f.OriginalName, f.CreatedAtUtc)));
+
+    public async Task<BulkCheckDto> CheckAsync(IFormFile file, CancellationToken ct)
+    {
+        if (!string.Equals(Path.GetExtension(file.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase)) throw ApiException.BadRequest("Upload an Excel .xlsx file.", "file");
+        if (file.Length == 0 || file.Length > bulk.Value.MaxFileMb * 1024L * 1024) throw ApiException.BadRequest($"The Excel file must be between 1 byte and {bulk.Value.MaxFileMb} MB.", "file");
+        var s = await settings.GetAsync(ct);
+        var index = await BuildFileIndexAsync(ct);
+        await using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct); ms.Position = 0;
+        var sig = ms.GetBuffer(); if (ms.Length < 4 || sig[0] != 0x50 || sig[1] != 0x4B) throw ApiException.BadRequest("This is not a valid .xlsx file.", "file");
+
+        const int Cap = 500;
+        var missing = new List<BulkMissingFileDto>(); var invalid = new List<BulkErrorDto>();
+        int total = 0, ready = 0, missingCount = 0, invalidCount = 0, rowNo = 1;
+        var usedFiles = new HashSet<string>();
+        foreach (var item in MiniExcel.Query(ms, useHeaderRow: true))
+        {
+            ct.ThrowIfCancellationRequested();
+            rowNo++;
+            var c = ReadCells((IDictionary<string, object?>)item);
+            if (c.Values.All(string.IsNullOrWhiteSpace)) continue;
+            if (++total > bulk.Value.MaxRows) throw ApiException.BadRequest($"The sheet has more than {bulk.Value.MaxRows} rows. Split it into smaller files.", "file");
+            var num = DrawingNumberFormat.Normalize(S(c, "number"));
+            void Bad(string msg) { invalidCount++; if (invalid.Count < Cap) invalid.Add(new BulkErrorDto(rowNo, num.Length == 0 ? null : num, msg)); }
+            if (num.Length == 0) { Bad("DrawingNumber is empty."); continue; }
+            if (!s.Format.IsMatch(num)) { Bad($"Drawing number does not match the format {s.Format.Mask}."); continue; }
+            if (S(c, "url").Length > 0)   // a pasted URL wins over the file name
+            {
+                if (FileIdInUrl.IsMatch(S(c, "url"))) { ready++; continue; }
+                Bad("DrawingUrl is not a URL generated by the Upload drawing screen (leave it empty to use the uploaded file with the matching name)."); continue;
+            }
+            int? volt = TryInt(S(c, "volt"), out var v) && v is >= 1 and <= 2000 ? v : null;
+            var ahM = AhPattern.Match(S(c, "ah"));
+            int? ah = ahM.Success && int.Parse(ahM.Groups[1].Value) > 0 ? int.Parse(ahM.Groups[1].Value) : null;
+            var std = ahM.Success && ahM.Groups[2].Success ? ahM.Groups[2].Value.Trim().ToUpperInvariant() : "";
+            if (volt is null) { Bad("Voltage must be a number in volts."); continue; }
+            if (ah is null) { Bad("AhRating must look like 560 or 620(DIN)."); continue; }
+            var hit = index.Find(num, volt, ah);
+            if (hit is null)
+            {
+                missingCount++;
+                if (missing.Count < Cap) missing.Add(new BulkMissingFileDto(rowNo, num, DrawingFileName.Expected(num, volt, ah, std)));
+            }
+            else { ready++; usedFiles.Add(hit.Id); }
+        }
+
+        // files that were uploaded but no row of this Excel (and no existing drawing) uses
+        var referenced = (await db.Revisions.AsNoTracking().Where(r => r.FileId != null).Select(r => r.FileId!).Distinct().ToListAsync(ct)).ToHashSet();
+        var unused = index.All.Where(e => !usedFiles.Contains(e.Id) && !referenced.Contains(e.Id)).Select(e => e.Name).Order().ToList();
+        return new BulkCheckDto(total, ready, missingCount, missing, invalidCount, invalid, unused.Count, unused.Take(Cap).ToList());
+    }
+
     // ------------------------------------------------------------------ template
     public byte[] BuildTemplate()
     {
         var sample = new List<Dictionary<string, object?>>
         {
-            new() { ["DrawingNumber"] = "25 600 001 A", ["Category"] = "Imports", ["Make"] = "Jungheinrich", ["VehicleType"] = "Reach Truck", ["Model"] = "ETV 320", ["Capacity"] = "1.8 T", ["Voltage"] = 48, ["AhRating"] = "620(DIN)", ["Connector"] = "SR 350A", ["Length"] = 1220, ["Width"] = 350, ["Height"] = 780, ["Comments"] = "", ["CompetitorDrawingNumber"] = "", ["DrawingUrl"] = "https://your-portal/api/files/fil_xxxxxxxxxxxxxxxxxxxxx" },
+            new() { ["DrawingNumber"] = "25 600 001 A", ["Category"] = "Imports", ["Make"] = "Jungheinrich", ["VehicleType"] = "Reach Truck", ["Model"] = "ETV 320", ["Capacity"] = "1.8 T", ["Voltage"] = 48, ["AhRating"] = "620(DIN)", ["Connector"] = "SR 350A", ["Length"] = 1220, ["Width"] = 350, ["Height"] = 780, ["Comments"] = "", ["CompetitorDrawingNumber"] = "", ["DrawingUrl"] = "" },
         };
         var help = new List<Dictionary<string, object?>>
         {
@@ -82,7 +154,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             new() { ["Column"] = "Voltage", ["Rule"] = "Number in volts, for example 48." },
             new() { ["Column"] = "AhRating", ["Rule"] = "Number, optionally followed by a standard in brackets: 560 or 620(DIN)." },
             new() { ["Column"] = "Length / Width / Height", ["Rule"] = "Tray dimensions in mm, 3 or 4 digits." },
-            new() { ["Column"] = "DrawingUrl", ["Rule"] = "The URL shown after uploading the file on the 'Upload drawing' screen. Required. The same URL and the same drawing number may be used on several rows (different makes or models) when one drawing file covers several drawings." },
+            new() { ["Column"] = "DrawingUrl", ["Rule"] = "OPTIONAL. Leave it empty when you uploaded the drawing files in bulk: each row is joined to the file named '<DrawingNumber>(<Voltage>V-<Ah> AH).pdf', for example '25 600 002 B(48V-775 AH).pdf'. Or paste the URL shown after uploading a file on the 'Upload drawing' screen (a URL always wins over the file name). The same file may be used on several rows." },
         };
         using var ms = new MemoryStream();
         MiniExcel.SaveAs(ms, new Dictionary<string, object> { ["Drawings"] = sample, ["Instructions"] = help });
@@ -125,6 +197,17 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
         "drawingurl" or "url" or "fileurl" or "drawingbucketurl" or "bucketurl" => "url", var other => other
     };
 
+    private static Dictionary<string, string?> ReadCells(IDictionary<string, object?> item)
+    {
+        var cells = new Dictionary<string, string?>();
+        foreach (var kv in item)
+        {
+            var v = kv.Value switch { null => null, double d => d.ToString("0.##########", System.Globalization.CultureInfo.InvariantCulture), DateTime dt => dt.ToString("o"), var x => x.ToString() };
+            cells[Canon(kv.Key)] = v;
+        }
+        return cells;
+    }
+
     private static string S(IDictionary<string, string?> d, string k) => d.TryGetValue(k, out var v) ? (v ?? "").Trim() : "";
     private static bool TryInt(string s, out int n)
     {
@@ -147,6 +230,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             job.TotalRows = total; await db.SaveChangesAsync(ct);
 
             var masters = await LoadMastersAsync(ct);
+            var fileIndex = await BuildFileIndexAsync(ct);
             var existing = (await db.Drawings.AsNoTracking().Select(d => new { d.DrawingNumber, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard }).ToListAsync(ct)).Select(d => Key(d.DrawingNumber, d.ModelId, d.VoltageV, d.AhValue, d.AhStandard)).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var batch = new List<(int Row, Dictionary<string, string?> Cells)>();
             var rowNo = 1;
@@ -154,17 +238,12 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             {
                 ct.ThrowIfCancellationRequested();
                 rowNo++;
-                var cells = new Dictionary<string, string?>();
-                foreach (var kv in (IDictionary<string, object?>)item)
-                {
-                    var v = kv.Value switch { null => null, double d => d.ToString("0.##########", System.Globalization.CultureInfo.InvariantCulture), DateTime dt => dt.ToString("o"), var x => x.ToString() };
-                    cells[Canon(kv.Key)] = v;
-                }
+                var cells = ReadCells((IDictionary<string, object?>)item);
                 if (cells.Values.All(string.IsNullOrWhiteSpace)) { job.ProcessedRows++; continue; }
                 batch.Add((rowNo, cells));
-                if (batch.Count >= o.BatchSize) { masters = await ProcessBatchAsync(job, batch, masters, existing, s, ct); batch.Clear(); await Task.Delay(o.BatchDelayMs, ct); }
+                if (batch.Count >= o.BatchSize) { masters = await ProcessBatchAsync(job, batch, masters, existing, s, fileIndex, ct); batch.Clear(); await Task.Delay(o.BatchDelayMs, ct); }
             }
-            if (batch.Count > 0) await ProcessBatchAsync(job, batch, masters, existing, s, ct);
+            if (batch.Count > 0) await ProcessBatchAsync(job, batch, masters, existing, s, fileIndex, ct);
             job.Status = job.ErrorCount > 0 ? JobStatus.CompletedWithErrors : JobStatus.Completed;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -186,7 +265,7 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
     private static string Key(string num, string modelId, int volt, int ah, string? std) => $"{num}|{modelId}|{volt}|{ah}|{std ?? ""}";
 
     private async Task<Masters> ProcessBatchAsync(BulkImportJob job, List<(int Row, Dictionary<string, string?> Cells)> rows, Masters m,
-        HashSet<string> existing, DrawingSettings s, CancellationToken ct)
+        HashSet<string> existing, DrawingSettings s, DrawingFileIndex fileIndex, CancellationToken ct)
     {
         var errors = new List<BulkImportRowError>();
         void Err(int row, string? num, string msg) { job.ErrorCount++; if (job.ErrorCount <= 5000) errors.Add(new BulkImportRowError { JobId = job.Id, RowNumber = row, DrawingNumber = num is null ? null : Text.Truncate(num, 60), Message = Text.Truncate(msg, 480) }); }
@@ -216,9 +295,20 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             if (ah < 1) { Err(row, num, "AhRating must be greater than zero."); continue; }
             if (!TryInt(S(c, "len"), out var len) || len is < 100 or > 9999 || !TryInt(S(c, "wid"), out var wid) || wid is < 100 or > 9999 || !TryInt(S(c, "hei"), out var hei) || hei is < 100 or > 9999)
             { Err(row, num, "Length, Width and Height must be numbers with 3 or 4 digits."); continue; }
-            var urlM = FileIdInUrl.Match(S(c, "url"));
-            if (!urlM.Success) { Err(row, num, "DrawingUrl is missing or is not a URL generated by the Upload drawing screen."); continue; }
-            if (!files.TryGetValue(urlM.Groups[1].Value.ToLowerInvariant(), out var file)) { Err(row, num, "The drawing file for this URL was not found on the server."); continue; }
+            string fileId;
+            if (S(c, "url").Length > 0)
+            {
+                var urlM = FileIdInUrl.Match(S(c, "url"));
+                if (!urlM.Success) { Err(row, num, "DrawingUrl is not a URL generated by the Upload drawing screen (leave it empty to use the uploaded file with the matching name)."); continue; }
+                if (!files.TryGetValue(urlM.Groups[1].Value.ToLowerInvariant(), out var file)) { Err(row, num, "The drawing file for this URL was not found on the server."); continue; }
+                fileId = file.Id;
+            }
+            else
+            {   // no URL: join the row to the bulk-uploaded file named after its drawing number, voltage and Ah
+                var hit = fileIndex.Find(num, volt, ah);
+                if (hit is null) { Err(row, num, $"Drawing file missing. Upload a file named \"{DrawingFileName.Expected(num, volt, ah, std)}\" and import again (rows already imported are skipped)."); continue; }
+                fileId = hit.Id;
+            }
 
             // master data (optionally auto-created)
             T? Get<T>(Dictionary<string, T> d, string name, Func<T> make, string label, out bool fail) where T : class
@@ -248,10 +338,10 @@ public sealed class BulkImportService(AppDbContext db, ISettingsService settings
             {
                 DrawingNumber = num, ModelId = model!.Id, VoltageV = volt, AhValue = ah, AhStandard = std, LengthMm = len, WidthMm = wid, HeightMm = hei, ConnectorTypeId = conn!.Id,
                 Comments = Text.NullIfEmpty(Text.CleanMultiline(S(c, "comments"), 2000)), CompetitorDrawingNumber = Text.NullIfEmpty(Text.Clean(S(c, "competitor"), 60)),
-                CurrentRevisionNo = 1, CurrentFileId = file.Id, CreatedById = job.RequestedById,
+                CurrentRevisionNo = 1, CurrentFileId = fileId, CreatedById = job.RequestedById,
             };
             newDrawings.Add(d); seen.Add(dupKey);
-            newRevs.Add(new DrawingRevision { DrawingId = d.Id, RevisionNo = 1, DrawingNumber = num, FileId = file.Id, ChangeNotes = "Imported from Excel", CreatedById = job.RequestedById });
+            newRevs.Add(new DrawingRevision { DrawingId = d.Id, RevisionNo = 1, DrawingNumber = num, FileId = fileId, ChangeNotes = "Imported from Excel", CreatedById = job.RequestedById });
             created++;
         }
 

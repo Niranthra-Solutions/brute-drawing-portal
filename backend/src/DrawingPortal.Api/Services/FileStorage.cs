@@ -54,6 +54,8 @@ public interface IFileStorage
 {
     Task<StoredFile> SaveAsync(IFormFile file, FileKind kind, string? userId, CancellationToken ct);
     Task<StoredFile> SaveBytesAsync(byte[] bytes, string fileName, FileKind kind, string? userId, CancellationToken ct);
+    /// <summary>Bulk upload: like SaveAsync for a drawing, but the file keeps ITS OWN name even when identical content is already stored under another name (the name carries the drawing number).</summary>
+    Task<StoredFile> SaveDrawingKeepingNameAsync(IFormFile file, string? userId, CancellationToken ct);
     FileStream Open(StoredFile file);
 }
 
@@ -71,13 +73,19 @@ public sealed class FileStorage(AppDbContext db, IOptions<StorageOptions> opt, I
         return await SaveStreamAsync(s, file.FileName, kind, userId, ct);
     }
 
+    public async Task<StoredFile> SaveDrawingKeepingNameAsync(IFormFile file, string? userId, CancellationToken ct)
+    {
+        await using var s = file.OpenReadStream();
+        return await SaveStreamAsync(s, file.FileName, FileKind.Drawing, userId, ct, keepName: true);
+    }
+
     public async Task<StoredFile> SaveBytesAsync(byte[] bytes, string fileName, FileKind kind, string? userId, CancellationToken ct)
     {
         await using var ms = new MemoryStream(bytes, writable: false);
         return await SaveStreamAsync(ms, fileName, kind, userId, ct);
     }
 
-    private async Task<StoredFile> SaveStreamAsync(Stream input, string clientName, FileKind kind, string? userId, CancellationToken ct)
+    private async Task<StoredFile> SaveStreamAsync(Stream input, string clientName, FileKind kind, string? userId, CancellationToken ct, bool keepName = false)
     {
         var display = FileRules.SafeDisplayName(clientName);
         var ext = Path.GetExtension(display).ToLowerInvariant();
@@ -118,6 +126,7 @@ public sealed class FileStorage(AppDbContext db, IOptions<StorageOptions> opt, I
             var same = await db.Files.AsNoTracking().Where(f => f.Kind == kind && f.Sha256 == hash && f.SizeBytes == total && f.Extension == ext).OrderBy(f => f.CreatedAtUtc).ToListAsync(ct);
             foreach (var old in same)
             {
+                if (keepName && !string.Equals(old.OriginalName, display, StringComparison.OrdinalIgnoreCase)) continue;   // same bytes, different drawing number: store under the new name
                 var oldFull = Path.GetFullPath(Path.Combine(Root, old.StoredPath));
                 if (!oldFull.StartsWith(Root + Path.DirectorySeparatorChar, StringComparison.Ordinal) || !File.Exists(oldFull)) continue;
                 try { File.Delete(full); } catch { /* best effort */ }

@@ -133,6 +133,7 @@ try
         FixedWindowRateLimiterOptions W(int permit, int minutes) => new() { PermitLimit = permit, Window = TimeSpan.FromMinutes(minutes), QueueLimit = 0 };
         o.AddPolicy("otp-request", c => RateLimitPartition.GetFixedWindowLimiter("otpq:" + (c.Connection.RemoteIpAddress?.ToString() ?? "anon"), _ => W(rl.GetValue("OtpRequestPer15Min", 10), 15)));
         o.AddPolicy("otp-verify", c => RateLimitPartition.GetFixedWindowLimiter("otpv:" + (c.Connection.RemoteIpAddress?.ToString() ?? "anon"), _ => W(rl.GetValue("OtpVerifyPer15Min", 30), 15)));
+        o.AddPolicy("bulk-upload", c => RateLimitPartition.GetFixedWindowLimiter("bup:" + Key(c), _ => W(rl.GetValue("BulkUploadsPer10Min", 5000), 10)));
         o.AddPolicy("upload", c => RateLimitPartition.GetFixedWindowLimiter("up:" + Key(c), _ => W(rl.GetValue("UploadsPer10Min", 120), 10)));
         o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c => RateLimitPartition.GetFixedWindowLimiter("g:" + Key(c), _ => W(rl.GetValue("RequestsPerMinute", 900), 1)));
     });
