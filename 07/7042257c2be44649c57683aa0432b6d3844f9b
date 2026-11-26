@@ -1,0 +1,32 @@
+backend/src/DrawingPortal.Api/Services/DrawingService.cs
+  h_51a00495fb6020 372
+backend/src/DrawingPortal.Api/Options/Options.cs
+  h_51a00495fb6020 39-48
+frontend/src/lib/schemas.ts
+  h_51a00495fb6020 23-29
+  h_51a00495fb6020 30,98
+frontend/src/lib/util.ts
+  h_51a00495fb6020 122-151
+  h_51a00495fb6020 121
+frontend/src/components/app/common.tsx
+  h_51a00495fb6020 14,338,342
+  h_51a00495fb6020 423
+frontend/src/pages/admin/drawing-files.tsx
+  h_51a00495fb6020 9,32-33
+  h_51a00495fb6020 359
+backend/src/DrawingPortal.Api/Dtos/Dtos.cs
+  h_51a00495fb6020 117-118
+frontend/src/pages/admin/drawing-form.tsx
+  h_51a00495fb6020 8,557-562,732,1089-1093,1106-1107,1176-1217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "077042257c2be44649c57683aa0432b6d3844f9b",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
