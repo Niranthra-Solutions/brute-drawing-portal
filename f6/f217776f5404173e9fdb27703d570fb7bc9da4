@@ -1,0 +1,16 @@
+frontend/src/components/app/showcase-images.tsx
+  h_51a00495fb6020 1-59
+frontend/src/components/app/product-showcase.tsx
+  h_51a00495fb6020 1-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f6f217776f5404173e9fdb27703d570fb7bc9da4",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
