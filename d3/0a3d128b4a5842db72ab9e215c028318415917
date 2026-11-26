@@ -1,0 +1,14 @@
+frontend/src/pages/login.tsx
+  h_51a00495fb6020 20,66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d30a3d128b4a5842db72ab9e215c028318415917",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
