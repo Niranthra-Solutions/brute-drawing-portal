@@ -83,9 +83,9 @@ export function ProductShowcase() {
               <image
                 href={s.battery}
                 x="14"
-                y="18"
+                y="16"
                 width="204"
-                height="126"
+                height="150"
                 preserveAspectRatio="xMidYMid meet"
               />
             </motion.g>
@@ -107,38 +107,6 @@ export function ProductShowcase() {
                 height="100"
                 preserveAspectRatio="xMidYMid meet"
               />
-            </motion.g>
-            <motion.g
-              {...anim(
-                {
-                  initial: { opacity: 0, scale: 0.7 },
-                  animate: { opacity: 1, scale: 1 },
-                },
-                0.9,
-              )}
-              style={{ transformOrigin: "116px 157px" }}
-            >
-              <rect
-                x="16"
-                y="147"
-                width="200"
-                height="21"
-                rx="10.5"
-                fill="#030B14"
-                stroke={GREEN}
-                strokeWidth="1.6"
-              />
-              <text
-                x="116"
-                y="161.5"
-                textAnchor="middle"
-                fontSize="11"
-                fontWeight="800"
-                fill="#fff"
-                fontFamily="Inter,sans-serif"
-              >
-                {s.name}
-              </text>
             </motion.g>
             <motion.g
               {...anim(
