@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import { ApiError } from "@/lib/api";
-import { statusLabel } from "@/lib/util";
+import { copyText, statusLabel } from "@/lib/util";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -335,12 +335,11 @@ export function CopyField({
         type="button"
         variant="outline"
         onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(value);
+          if (await copyText(value)) {
             setDone(true);
             notify.ok("Copied to clipboard");
             setTimeout(() => setDone(false), 1800);
-          } catch {
+          } else {
             notify.err("Copy failed — select the text and press Ctrl+C");
           }
         }}

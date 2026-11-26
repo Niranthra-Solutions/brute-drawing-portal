@@ -6,7 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { api } from "@/lib/api";
 import type { DrawingFileItem, Paged } from "@/lib/types";
 import { useDebounced } from "@/lib/hooks";
-import { fmtDateTime, fmtSize } from "@/lib/util";
+import { copyText, fmtDateTime, fmtSize } from "@/lib/util";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,12 +29,8 @@ import { DataTable } from "@/components/app/data-table";
 import { FilterSelect } from "@/components/app/fields";
 
 const copy = async (text: string, what: string) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    notify.ok(`${what} copied`);
-  } catch {
-    notify.err("Copy failed — select the text and press Ctrl+C");
-  }
+  if (await copyText(text)) notify.ok(`${what} copied`);
+  else notify.err("Copy failed — select the text and press Ctrl+C");
 };
 
 export default function DrawingFilesPage() {

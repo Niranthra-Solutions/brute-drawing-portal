@@ -36,6 +36,16 @@ public sealed class AuthOptions
     public int MaxFailuresBeforeLockout { get; set; } = 10;
     public int LockoutMinutes { get; set; } = 15;
     public TestAdminOptions TestAdmin { get; set; } = new();
+    /// <summary>Only e-mail addresses of these domains may sign in (comma separated, without @). Empty = any domain. The test admin is always allowed.</summary>
+    public string AllowedEmailDomains { get; set; } = "amararaja.com";
+
+    public bool IsAllowedDomain(string email)
+    {
+        var list = (AllowedEmailDomains ?? "").Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (list.Length == 0) return true;
+        var at = email.LastIndexOf('@');
+        return at > 0 && list.Any(d => string.Equals(email[(at + 1)..], d.TrimStart('@'), StringComparison.OrdinalIgnoreCase));
+    }
 }
 
 public sealed class SmtpOptions

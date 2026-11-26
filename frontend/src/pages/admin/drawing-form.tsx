@@ -5,7 +5,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -554,7 +554,12 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
           v.comments ||
           (mode === "new" ? (r.description ?? "").slice(0, 500) : ""),
         // the AFS / drain option the requester asked for is pre-selected for the admin to confirm
-        afs: v.afs || (r.afsDrain ?? ""),
+        afs:
+          mode === "revision"
+            ? [...new Set([...v.afs.split(","), r.afsDrain ?? ""])]
+                .filter(Boolean)
+                .join(",")
+            : v.afs || (r.afsDrain ?? ""),
       });
     }
     form.reset(v);
@@ -724,6 +729,7 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
           ...spec,
           fileId: v.fileId,
           changeNotes: v.notes,
+          afsDrain: v.afs,
           newDrawingNumber: v.number,
           requestId: requestId || undefined,
         });
@@ -1080,6 +1086,11 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
                     />
                   </div>
                 )}
+                {mode === "revision" && (
+                  <div className="mt-5">
+                    <AfsPicker form={form} />
+                  </div>
+                )}
               </SectionCard>
               {mode !== "revision" && (
                 <SectionCard icon={Info} title="4 · Optional">
@@ -1092,46 +1103,8 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
                       maxLength={60}
                     />
                   </div>
-                  <div className="mt-4 grid gap-1.5">
-                    <Label className="text-xs font-bold">
-                      AFS & Drain Holes Selection
-                    </Label>
-                    <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-xl border bg-amber-50/50 px-3 py-2.5">
-                      {AFS_DRAWING_OPTIONS.map((o) => {
-                        const cur = form
-                          .watch("afs")
-                          .split(",")
-                          .filter(Boolean);
-                        const on = cur.includes(o.value);
-                        return (
-                          <label
-                            key={o.value}
-                            className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold"
-                          >
-                            <input
-                              type="checkbox"
-                              className="size-4 accent-orange-600"
-                              checked={on}
-                              onChange={() =>
-                                form.setValue(
-                                  "afs",
-                                  (on
-                                    ? cur.filter((x) => x !== o.value)
-                                    : [...cur, o.value]
-                                  ).join(","),
-                                  { shouldDirty: true },
-                                )
-                              }
-                            />
-                            {o.label}
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Shown to users in the search results as "AFS Available…"
-                      so they know the drawing already includes it.
-                    </p>
+                  <div className="mt-4">
+                    <AfsPicker form={form} />
                   </div>
                   <div className="mt-4">
                     <FTextarea
@@ -1199,5 +1172,47 @@ export default function DrawingFormPage({ mode }: { mode: Mode }) {
         </form>
       </Form>
     </>
+  );
+}
+
+/** AFS / drain-hole checkboxes, shared by the new, edit and revision forms. */
+function AfsPicker({ form }: { form: UseFormReturn<Values> }) {
+  const cur = form.watch("afs").split(",").filter(Boolean);
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-xs font-bold">AFS & Drain Holes Selection</Label>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-xl border bg-amber-50/50 px-3 py-2.5">
+        {AFS_DRAWING_OPTIONS.map((o) => {
+          const on = cur.includes(o.value);
+          return (
+            <label
+              key={o.value}
+              className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold"
+            >
+              <input
+                type="checkbox"
+                className="size-4 accent-orange-600"
+                checked={on}
+                onChange={() =>
+                  form.setValue(
+                    "afs",
+                    (on
+                      ? cur.filter((x) => x !== o.value)
+                      : [...cur, o.value]
+                    ).join(","),
+                    { shouldDirty: true },
+                  )
+                }
+              />
+              {o.label}
+            </label>
+          );
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Tick what this drawing includes. Shown to users in the search results as
+        "AFS Available…" so they know the drawing already has it.
+      </p>
+    </div>
   );
 }

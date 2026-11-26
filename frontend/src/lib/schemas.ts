@@ -20,7 +20,14 @@ export const emailSchema = z.object({
     .string()
     .trim()
     .min(1, "Enter your e-mail address.")
-    .email("Enter a valid e-mail address."),
+    .email("Please enter a valid Amararaja company mail ID.")
+    .refine(
+      (v) =>
+        /@amararaja\.com$/i.test(v) || /^admin@drawingportal\.test$/i.test(v),
+      {
+        message: "Please enter a valid Amararaja company mail ID.",
+      },
+    ),
 });
 export const userSchema = z.object({
   fullName: z.string().trim().min(2, "Enter the full name.").max(120),

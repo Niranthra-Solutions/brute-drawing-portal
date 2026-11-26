@@ -114,6 +114,8 @@ public sealed class AddRevisionDto
     public int? HeightMm { get; set; }
     public string? ConnectorTypeId { get; set; }
     [StringLength(100)] public string? ConnectorName { get; set; }
+    /// <summary>Comma separated AFS, Middle, Corner for the revised drawing. Null = keep the earlier drawing's value; empty = none.</summary>
+    [StringLength(40)] public string? AfsDrain { get; set; }
 }
 public sealed class DrawingListQuery
 {

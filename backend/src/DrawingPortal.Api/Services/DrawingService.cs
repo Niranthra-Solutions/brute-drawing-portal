@@ -369,7 +369,7 @@ public sealed class DrawingService(AppDbContext db, ISettingsService settings, I
             DrawingNumber = newNumber, ModelId = modelId, VoltageV = dto.VoltageV ?? src.VoltageV, AhValue = dto.AhValue ?? src.AhValue,
             AhStandard = dto.AhStandard is not null ? Text.Clean(dto.AhStandard, 20).ToUpperInvariant() : src.AhStandard,
             LengthMm = dto.LengthMm ?? src.LengthMm, WidthMm = dto.WidthMm ?? src.WidthMm, HeightMm = dto.HeightMm ?? src.HeightMm,
-            ConnectorTypeId = dto.ConnectorTypeId ?? src.ConnectorTypeId, Comments = src.Comments, AfsDrain = src.AfsDrain, CompetitorDrawingNumber = src.CompetitorDrawingNumber,
+            ConnectorTypeId = dto.ConnectorTypeId ?? src.ConnectorTypeId, Comments = src.Comments, AfsDrain = dto.AfsDrain is null ? src.AfsDrain : DrawingMapper.NormalizeAfs(dto.AfsDrain), CompetitorDrawingNumber = src.CompetitorDrawingNumber,
             CurrentRevisionNo = position, CurrentFileId = file!.Id, CreatedById = user.Id,
         };
         db.Drawings.Add(d);

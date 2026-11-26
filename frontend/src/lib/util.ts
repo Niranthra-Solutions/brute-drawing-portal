@@ -119,3 +119,33 @@ export const AFS_DRAWING_OPTIONS = [
   { value: "Middle", label: "Middle drain holes" },
   { value: "Corner", label: "Corner drain holes" },
 ];
+
+/** Copies text. Works on plain http:// too (the Clipboard API only exists on https / localhost), by falling back to a hidden textarea. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    if (window.isSecureContext && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the old method
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+  const active = document.activeElement as HTMLElement | null;
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  document.body.removeChild(ta);
+  active?.focus?.();
+  return ok;
+}
