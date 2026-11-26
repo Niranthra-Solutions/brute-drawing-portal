@@ -17,7 +17,7 @@ import { FInput } from "@/components/app/fields";
 import { FormError, Spinner, errMsg } from "@/components/app/common";
 import { cn } from "@/lib/utils";
 import { PoweredBy } from "@/components/app/powered-by";
-import { TrayShowcase } from "@/components/app/tray-showcase";
+import { ProductShowcase } from "@/components/app/product-showcase";
 
 const STEPS = [
   "Search the drawing by vehicle, battery and tray size",
@@ -63,7 +63,7 @@ function Hero() {
           modification or new-drawing requests with full traceability.
         </p>
       </motion.div>
-      <TrayShowcase />
+      <ProductShowcase />
       <div className="relative z-10 mb-3.5 rounded-2xl border border-white/10 bg-white/[.04] px-[18px] py-3.5">
         <div className="mb-3 text-[10.5px] font-bold tracking-wide text-white/45 uppercase">
           How it works
