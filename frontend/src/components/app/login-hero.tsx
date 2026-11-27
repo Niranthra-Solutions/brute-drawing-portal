@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SLIDES_DATA } from "./showcase-images";
@@ -13,187 +13,351 @@ const STEPS: [string, string][] = [
   ["Engineering", "Uploads and notifies"],
 ];
 
-function gearPath(cx: number, cy: number, r: number, teeth: number) {
-  const depth = r * 0.16;
-  const pts: string[] = [];
-  const step = (Math.PI * 2) / teeth;
-  for (let t = 0; t < teeth; t++) {
-    const a = t * step;
-    const seq: [number, number][] = [
-      [a, r - depth],
-      [a + step * 0.18, r],
-      [a + step * 0.5, r],
-      [a + step * 0.68, r - depth],
-    ];
-    for (const [ang, rad] of seq) {
-      pts.push(`${cx + Math.cos(ang) * rad},${cy + Math.sin(ang) * rad}`);
-    }
-  }
-  const hole = r * 0.38;
+function cloudPath(x: number, y: number, w: number, h: number, r: number) {
+  const nx = Math.round(w / (r * 2));
+  const ny = Math.round(h / (r * 2));
+  const sx = w / nx;
+  const sy = h / ny;
+  let d = `M${x},${y}`;
+  for (let k = 0; k < nx; k++) d += `a${sx / 2},${r} 0 0 1 ${sx},0`;
+  for (let k = 0; k < ny; k++) d += `a${r},${sy / 2} 0 0 1 0,${sy}`;
+  for (let k = 0; k < nx; k++) d += `a${sx / 2},${r} 0 0 1 ${-sx},0`;
+  for (let k = 0; k < ny; k++) d += `a${r},${sy / 2} 0 0 1 0,${-sy}`;
+  return d + "Z";
+}
+
+const COLS = 6;
+const ROWS = 3;
+const CELL_W = 72;
+const CELL_H = 82;
+const GAP = 8;
+
+function DrawLine({
+  d,
+  delay = 0,
+  color = "#fff",
+  width = 1.4,
+  dash,
+}: {
+  d: string;
+  delay?: number;
+  color?: string;
+  width?: number;
+  dash?: string;
+}) {
   return (
-    `M${pts.join("L")}Z` +
-    `M${cx + hole},${cy}a${hole},${hole} 0 1,0 ${-hole * 2},0a${hole},${hole} 0 1,0 ${hole * 2},0Z`
+    <path
+      d={d}
+      pathLength={1}
+      fill="none"
+      stroke={color}
+      strokeWidth={width}
+      strokeDasharray={dash}
+      className="login-draw"
+      style={{ animationDelay: `${delay}s` }}
+    />
   );
 }
 
-function Gear({
-  cx,
-  cy,
-  r,
-  teeth,
-  color,
-  opacity,
-  seconds,
-  reverse,
-}: {
-  cx: number;
-  cy: number;
-  r: number;
-  teeth: number;
-  color: string;
-  opacity: number;
-  seconds: number;
-  reverse?: boolean;
-}) {
-  const d = useMemo(() => gearPath(cx, cy, r, teeth), [cx, cy, r, teeth]);
+function TrayTopView() {
+  const cells: { x: number; y: number }[] = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      cells.push({ x: 24 + c * (CELL_W + GAP), y: 34 + r * (CELL_H + GAP) });
+  const snake = Array.from({ length: ROWS }, (_, r) => {
+    const ys = 34 + r * (CELL_H + GAP) + 14;
+    const x0 = 24 + CELL_W / 2;
+    const x1 = 24 + (COLS - 1) * (CELL_W + GAP) + CELL_W / 2;
+    const down = r < ROWS - 1 ? `V${ys + CELL_H + GAP}` : "";
+    return r % 2 === 0
+      ? `M${x0},${ys}H${x1}${down}`
+      : `M${x1},${ys}H${x0}${down}`;
+  });
+  const flow = (() => {
+    let d = "";
+    for (let r = 0; r < ROWS; r++) {
+      const ys = 34 + r * (CELL_H + GAP) + 14;
+      const x0 = 24 + CELL_W / 2;
+      const x1 = 24 + (COLS - 1) * (CELL_W + GAP) + CELL_W / 2;
+      if (r === 0) d += `M${x0},${ys}H${x1}V${ys + CELL_H + GAP}`;
+      else if (r % 2 === 1) d += `H${x0}V${ys + CELL_H + GAP}`;
+      else d += `H${x1}`;
+    }
+    return d;
+  })();
   return (
-    <g
-      style={{
-        transformOrigin: `${cx}px ${cy}px`,
-        animation: `login-spin ${seconds}s linear infinite ${reverse ? "reverse" : "normal"}`,
-      }}
-    >
-      <path d={d} fill={color} fillOpacity={opacity} fillRule="evenodd" />
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r * 0.56}
-        fill="none"
-        stroke={color}
-        strokeOpacity={opacity * 0.9}
-        strokeWidth="2"
+    <g transform="translate(790,150)" stroke="#fff" fill="none" opacity=".26">
+      <DrawLine
+        d="M0,10a10,10 0 0 1 10,-10H510a10,10 0 0 1 10,10V320a10,10 0 0 1 -10,10H10a10,10 0 0 1 -10,-10Z"
+        width={1.8}
       />
+      <DrawLine
+        d="M14,16a6,6 0 0 1 6,-6H500a6,6 0 0 1 6,6V314a6,6 0 0 1 -6,6H20a6,6 0 0 1 -6,-6Z"
+        delay={0.4}
+      />
+      {cells.map((c, n) => (
+        <g key={n}>
+          <DrawLine
+            d={`M${c.x},${c.y}h${CELL_W}v${CELL_H}h${-CELL_W}Z`}
+            delay={0.8 + n * 0.07}
+            width={1.1}
+          />
+          <circle
+            cx={c.x + 18}
+            cy={c.y + 14}
+            r="6"
+            className="login-fade"
+            style={{ animationDelay: `${1.4 + n * 0.07}s` }}
+          />
+          <circle
+            cx={c.x + 54}
+            cy={c.y + 14}
+            r="6"
+            className="login-fade"
+            style={{ animationDelay: `${1.4 + n * 0.07}s` }}
+          />
+          <path
+            d={`M${c.x + 12},${c.y + 42}h48M${c.x + 12},${c.y + 52}h48M${c.x + 12},${c.y + 62}h48`}
+            strokeWidth=".7"
+            className="login-fade"
+            style={{ animationDelay: `${1.8 + n * 0.07}s` }}
+          />
+        </g>
+      ))}
+      {snake.map((d, n) => (
+        <DrawLine key={n} d={d} delay={2.6 + n * 0.3} width={1.2} />
+      ))}
+      <circle cx="-2" cy="165" r="7" />
+      <circle cx="522" cy="165" r="7" />
+      <DrawLine
+        d="M-40,165H560M260,-40V370"
+        delay={3}
+        width={0.8}
+        dash="0.03 0.012 0.006 0.012"
+      />
+      <g strokeWidth="1">
+        <DrawLine d="M0,372V392M520,372V392M0,386H520" delay={3.4} />
+        <DrawLine d="M562,0H582M562,330H582M576,0V330" delay={3.6} />
+        <path
+          d="M0,386l8,-3v6zM520,386l-8,-3v6zM576,0l-3,8h6zM576,330l-3,-8h6z"
+          fill="#fff"
+          stroke="none"
+          className="login-fade"
+          style={{ animationDelay: "4s" }}
+        />
+      </g>
+      <g
+        fill="#fff"
+        stroke="none"
+        fontFamily="IBM Plex Mono, monospace"
+        fontSize="13"
+        className="login-fade"
+        style={{ animationDelay: "4.2s" }}
+      >
+        <text x="260" y="381" textAnchor="middle">
+          830
+        </text>
+        <text
+          x="598"
+          y="170"
+          textAnchor="middle"
+          transform="rotate(90 598 165)"
+        >
+          735
+        </text>
+      </g>
+      <g opacity="1" stroke="none" fill="none">
+        <path
+          d={flow}
+          stroke="#e06a2c"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeDasharray="8 46"
+          className="login-flow"
+          style={{ opacity: 0.95 }}
+        />
+      </g>
+      <g className="login-fade" style={{ animationDelay: "4.6s" }}>
+        <path
+          d={cloudPath(14, 22, CELL_W * 2 + GAP + 20, CELL_H + 24, 7)}
+          stroke="#e06a2c"
+          strokeWidth="1.8"
+        />
+        <path d="M60,22V-18" stroke="#e06a2c" strokeWidth="1.2" />
+        <rect
+          x="32"
+          y="-38"
+          width="56"
+          height="20"
+          fill="#e06a2c"
+          stroke="none"
+          rx="2"
+        />
+        <text
+          x="60"
+          y="-24"
+          textAnchor="middle"
+          fill="#fff"
+          stroke="none"
+          fontFamily="IBM Plex Mono, monospace"
+          fontSize="12"
+          fontWeight="700"
+        >
+          REV B
+        </text>
+      </g>
     </g>
   );
 }
 
-const SKYLINE: [number, number, number][] = [
-  [0, 70, 90],
-  [90, 110, 60],
-  [150, 85, 120],
-  [270, 130, 70],
-  [340, 95, 100],
-  [440, 120, 80],
-  [520, 80, 140],
-  [660, 110, 75],
-  [735, 100, 110],
-  [835, 130, 65],
-  [900, 90, 130],
-  [1030, 120, 85],
-  [1115, 85, 105],
-  [1220, 110, 70],
-  [1290, 100, 120],
-  [1410, 130, 80],
-];
+function ElevationView() {
+  return (
+    <g
+      transform="translate(1010,700) scale(.8)"
+      stroke="#fff"
+      fill="none"
+      opacity=".2"
+    >
+      <DrawLine d="M0,0H330V150H0Z" delay={1} width={1.6} />
+      <DrawLine d="M0,22H330" delay={1.4} />
+      <DrawLine d="M-14,0V-22H14M344,0V-22H316" delay={1.8} />
+      <DrawLine
+        d="M40,50H290M40,76H290M40,102H290M40,128H290"
+        delay={2.2}
+        width={0.8}
+      />
+      <circle
+        cx="58"
+        cy="11"
+        r="4"
+        className="login-fade"
+        style={{ animationDelay: "2.8s" }}
+      />
+      <circle
+        cx="272"
+        cy="11"
+        r="4"
+        className="login-fade"
+        style={{ animationDelay: "2.8s" }}
+      />
+      <DrawLine d="M350,0H368M350,150H368M362,0V150" delay={3} />
+      <text
+        x="380"
+        y="80"
+        fill="#fff"
+        stroke="none"
+        fontFamily="IBM Plex Mono, monospace"
+        fontSize="13"
+        className="login-fade"
+        style={{ animationDelay: "3.6s" }}
+      >
+        630
+      </text>
+    </g>
+  );
+}
+
+function TitleBlock() {
+  const mono = "IBM Plex Mono, monospace";
+  return (
+    <g
+      transform="translate(1040,24)"
+      fontFamily={mono}
+      className="login-fade"
+      style={{ animationDelay: "1.2s" }}
+    >
+      <rect
+        width="340"
+        height="112"
+        fill="none"
+        stroke="#fff"
+        strokeOpacity=".28"
+        strokeWidth="1.2"
+      />
+      <path d="M0,34H340M120,34V112" stroke="#fff" strokeOpacity=".2" />
+      <text
+        x="14"
+        y="23"
+        fill="#e06a2c"
+        fontSize="13"
+        fontWeight="700"
+        letterSpacing="3"
+      >
+        AMARON BRUTE
+      </text>
+      <text
+        x="14"
+        y="56"
+        fill="#fff"
+        fillOpacity=".45"
+        fontSize="10"
+        letterSpacing="1.5"
+      >
+        DRAWING NO.
+      </text>
+      <text x="132" y="56" fill="#fff" fillOpacity=".7" fontSize="14">
+        25 600 002 B
+      </text>
+      <text
+        x="14"
+        y="82"
+        fill="#fff"
+        fillOpacity=".45"
+        fontSize="10"
+        letterSpacing="1.5"
+      >
+        BATTERY
+      </text>
+      <text x="132" y="82" fill="#fff" fillOpacity=".7" fontSize="14">
+        48V · 775 AH
+      </text>
+      <text
+        x="14"
+        y="102"
+        fill="#fff"
+        fillOpacity=".45"
+        fontSize="10"
+        letterSpacing="1.5"
+      >
+        REV · SCALE
+      </text>
+      <text x="132" y="102" fill="#5fa850" fontSize="12">
+        B · 1:10
+      </text>
+    </g>
+  );
+}
 
 export function LoginBackdrop() {
   return (
     <div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+      className="login-anim pointer-events-none absolute inset-0 overflow-hidden"
       aria-hidden="true"
     >
       <style>{`
-        @keyframes login-spin { to { transform: rotate(360deg); } }
-        @keyframes login-twinkle { 0%,100% { opacity:.25 } 50% { opacity:1 } }
-        @keyframes login-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-14px) } }
+        @keyframes login-draw { to { stroke-dashoffset: 0; } }
+        @keyframes login-fade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes login-flow { to { stroke-dashoffset: -54; } }
+        .login-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: login-draw 2.6s ease-out forwards; }
+        .login-fade { opacity: 0; animation: login-fade 1s ease-out forwards; }
+        .login-flow { animation: login-flow 3.2s linear infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .login-anim, .login-anim * { animation: none !important; }
+          .login-anim *, .login-anim { animation: none !important; }
+          .login-draw { stroke-dashoffset: 0; }
+          .login-fade { opacity: 1; }
         }
       `}</style>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(224,106,44,.30),transparent_45%),radial-gradient(circle_at_55%_70%,rgba(224,106,44,.14),transparent_40%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.20),transparent_40%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:24px_24px]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(224,106,44,.28),transparent_45%),radial-gradient(circle_at_60%_75%,rgba(224,106,44,.10),transparent_40%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.18),transparent_40%)]" />
+      <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:120px_120px,120px_120px,24px_24px,24px_24px]" />
       <svg
-        className="login-anim absolute bottom-0 left-0 h-[32%] w-full"
-        viewBox="0 0 1440 420"
-        preserveAspectRatio="xMidYMax slice"
+        className="absolute inset-0 hidden h-full w-full lg:block"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
       >
-        <Gear
-          cx={430}
-          cy={250}
-          r={150}
-          teeth={22}
-          color="#8b95a3"
-          opacity={0.2}
-          seconds={90}
-        />
-        <Gear
-          cx={720}
-          cy={300}
-          r={105}
-          teeth={16}
-          color={ORANGE}
-          opacity={0.38}
-          seconds={62}
-          reverse
-        />
-        <Gear
-          cx={1010}
-          cy={235}
-          r={125}
-          teeth={19}
-          color="#8b95a3"
-          opacity={0.18}
-          seconds={76}
-        />
-        <Gear
-          cx={90}
-          cy={120}
-          r={52}
-          teeth={11}
-          color="#8b95a3"
-          opacity={0.22}
-          seconds={40}
-          reverse
-        />
-        <Gear
-          cx={1340}
-          cy={90}
-          r={42}
-          teeth={10}
-          color={ORANGE}
-          opacity={0.3}
-          seconds={34}
-        />
-        <g fill="#0b0d10" fillOpacity=".92">
-          {SKYLINE.map(([x, w, h], n) => (
-            <rect key={n} x={x} y={420 - h} width={w} height={h} />
-          ))}
-        </g>
-        <g fill={ORANGE} fillOpacity=".75">
-          {SKYLINE.flatMap(([x, w, h], n) =>
-            [0, 1, 2].map((k) => (
-              <rect
-                key={`${n}-${k}`}
-                x={x + 14 + k * ((w - 28) / 3)}
-                y={420 - h + 16 + ((n + k) % 3) * 18}
-                width="9"
-                height="7"
-                style={{
-                  animation: `login-twinkle ${2.4 + ((n * 3 + k) % 5) * 0.7}s ease-in-out ${(n + k) * 0.35}s infinite`,
-                }}
-              />
-            )),
-          )}
-        </g>
+        <TrayTopView />
+        <ElevationView />
+        <TitleBlock />
       </svg>
-      <div
-        className="login-anim absolute top-[16%] right-[39%] hidden size-16 rounded-full border-[6px] border-white/10 lg:block"
-        style={{ animation: "login-float 7s ease-in-out infinite" }}
-      />
-      <div
-        className="login-anim absolute bottom-[34%] left-[2%] hidden size-14 rotate-45 rounded-xl border-[5px] border-white/10 lg:block"
-        style={{ animation: "login-float 9s ease-in-out 1s infinite" }}
-      />
     </div>
   );
 }
