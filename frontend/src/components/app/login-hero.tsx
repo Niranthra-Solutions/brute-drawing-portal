@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Zap } from "lucide-react";
+import {
+  FilePlus2,
+  Search,
+  ShieldCheck,
+  Target,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SLIDES_DATA } from "./showcase-images";
 
 const ORANGE = "#e06a2c";
-const GREEN = "#5fa850";
 const INTERVAL = 5200;
 
-const FILTERS = ["Voltage", "Ah rating", "Tray size", "Connector"];
+const FEATURES: { icon: LucideIcon; t: string; d: string }[] = [
+  { icon: Search, t: "Search", d: "by vehicle, battery and tray size" },
+  { icon: Target, t: "Closest fit", d: "standard alternatives suggested" },
+  { icon: FilePlus2, t: "Request", d: "modification or new drawing" },
+  { icon: ShieldCheck, t: "Traceable", d: "every revision on record" },
+];
 
 const LINE = "rgba(214,220,227,.5)";
 const DIM = "rgba(154,164,175,.55)";
@@ -206,147 +216,27 @@ export function LoginHero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.05 }}
-          className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-2"
+          className="mt-6"
         >
-          <h1 className="font-heading text-[30px] leading-[1.08] font-bold tracking-tight sm:text-[38px] xl:text-[44px]">
-            Vehicle. Battery. Drawing.
+          <h1 className="font-heading text-[30px] leading-[1.08] font-bold tracking-tight sm:text-[40px] xl:text-[46px]">
+            Find the right drawing for
             <br />
             <span className="bg-gradient-to-r from-[#e06a2c] to-[#ff9a62] bg-clip-text text-transparent">
-              Found in one search.
+              every battery bank.
             </span>
           </h1>
-          <p className="max-w-[330px] text-[13.5px] leading-relaxed text-white/55">
+          <p className="mt-3 max-w-[560px] text-[14px] leading-relaxed text-white/55">
             Search, download and request tray drawings for every vehicle we
-            power. Always the latest revision.
+            power. Always the latest revision, always on record.
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
+        <div
+          className="mt-6 flex flex-col gap-5 lg:flex-row"
           onMouseEnter={() => setHold(true)}
           onMouseLeave={() => setHold(false)}
-          className="relative mt-5 h-[330px] overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(ellipse_at_72%_80%,rgba(224,106,44,.22),transparent_55%),linear-gradient(160deg,rgba(23,27,33,.92),rgba(10,12,15,.96))] shadow-[0_30px_80px_rgba(0,0,0,.5)] sm:h-[390px] min-[1700px]:h-[520px]"
         >
-          <div className="absolute inset-x-0 bottom-[54px] h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={i}
-              className="absolute inset-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div
-                className="absolute right-[6%] bottom-[34px] h-8 w-[38%] rounded-[50%] bg-[#e06a2c]/35 blur-2xl"
-                style={{ animation: "login-pulse 2.8s ease-in-out infinite" }}
-              />
-              <motion.img
-                src={s.truck}
-                alt={s.tag}
-                className="absolute right-[3%] bottom-[48px] h-[64%] w-[42%] object-contain object-bottom drop-shadow-[0_20px_24px_rgba(0,0,0,.6)]"
-                initial={{ x: 220, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 60, damping: 14 }}
-              />
-              <motion.div
-                className="absolute top-[7%] left-[19%] h-[58%] w-[36%]"
-                initial={{ y: -170, opacity: 0, rotate: -4 }}
-                animate={{ y: 0, opacity: 1, rotate: 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 70,
-                  damping: 11,
-                  delay: 0.25,
-                }}
-              >
-                <motion.img
-                  src={s.battery}
-                  alt={s.name}
-                  className="h-full w-full object-contain drop-shadow-[0_24px_28px_rgba(0,0,0,.65)]"
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{
-                    duration: 4.2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 1,
-                  }}
-                />
-              </motion.div>
-
-
-              <div className="absolute top-[11%] left-4 hidden flex-col gap-2.5 sm:flex">
-                {FILTERS.map((f, n) => (
-                  <motion.div
-                    key={f}
-                    className="flex items-center gap-2"
-                    initial={{ opacity: 0, x: -14 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 + n * 0.12 }}
-                  >
-                    <span
-                      className="size-1.5 rounded-full"
-                      style={{ background: n % 2 ? GREEN : ORANGE }}
-                    />
-                    <span className="rounded-md border border-white/12 bg-white/[.06] px-2 py-0.5 font-mono text-[10.5px] tracking-wider text-white/70 uppercase">
-                      {f}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-
-              <motion.div
-                className="absolute top-4 right-5 flex items-center gap-2"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <span className="font-mono text-[11px] text-white/40">
-                  {num} / {String(SLIDES_DATA.length).padStart(2, "0")}
-                </span>
-              </motion.div>
-
-              <motion.div
-                className="absolute right-6 bottom-3.5 left-6 flex items-end justify-between gap-3"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55 }}
-              >
-                <div>
-                  <div className="font-heading text-[19px] leading-tight font-bold sm:text-[23px]">
-                    {s.name}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] tracking-[.18em] text-white/45 uppercase">
-                    <Zap className="size-3 text-[#e06a2c]" />
-                    Powers the {s.tag}
-                  </div>
-                </div>
-                <motion.div
-                  className="flex items-center gap-2 rounded-full border border-[#5fa850]/40 bg-[#5fa850]/10 px-3 py-1 text-[11px] font-semibold text-[#9bd48e]"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.7 }}
-                >
-                  <span className="size-1.5 animate-pulse rounded-full bg-[#5fa850]" />
-                  Drawings online
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          onMouseEnter={() => setHold(true)}
-          onMouseLeave={() => setHold(false)}
-          className="relative mt-4"
-        >
-          <div className="absolute top-[23px] right-6 left-6 h-px bg-gradient-to-r from-white/5 via-white/20 to-white/5" />
-          <div className="relative flex gap-2 overflow-x-auto pb-1">
+          <div className="hidden w-[210px] shrink-0 flex-col lg:flex">
             {SLIDES_DATA.map((d, n) => {
               const active = n === i;
               return (
@@ -354,66 +244,145 @@ export function LoginHero() {
                   key={n}
                   type="button"
                   onClick={() => setI(n)}
-                  className="group relative flex min-w-[84px] flex-1 flex-col items-center gap-1.5 text-center"
+                  className={cn(
+                    "relative flex flex-1 items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-left transition-all duration-300",
+                    active
+                      ? "bg-gradient-to-r from-[#e06a2c] to-[#c9571d] shadow-[0_10px_30px_rgba(224,106,44,.35)]"
+                      : "hover:bg-white/[.05]",
+                  )}
                 >
                   <span
                     className={cn(
-                      "relative flex h-[46px] w-full max-w-[96px] items-center justify-center overflow-hidden rounded-xl border bg-[#12151a] px-2 transition-all duration-300",
-                      active
-                        ? "border-[#e06a2c] shadow-[0_0_26px_rgba(224,106,44,.4)]"
-                        : "border-white/12 group-hover:border-white/30",
+                      "font-mono text-[12px]",
+                      active ? "text-white" : "text-[#5fa850]",
                     )}
                   >
-                    <img
-                      src={d.truck}
-                      alt=""
+                    {String(n + 1).padStart(2, "0")}
+                  </span>
+                  <span className="leading-tight">
+                    <span className="block text-[14px] font-semibold">
+                      {shortName(d.name)}
+                    </span>
+                    <span
                       className={cn(
-                        "h-9 w-full object-contain transition-all duration-300",
-                        active
-                          ? "scale-110"
-                          : "opacity-60 group-hover:opacity-100",
+                        "block text-[11.5px]",
+                        active ? "text-white/80" : "text-white/45",
                       )}
+                    >
+                      Battery bank
+                    </span>
+                  </span>
+                  {active && !hold && (
+                    <motion.span
+                      key={`bar-${i}`}
+                      className="absolute bottom-0 left-0 h-[3px] bg-white/70"
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: INTERVAL / 1000, ease: "linear" }}
                     />
-                    {active && !hold && (
-                      <motion.span
-                        key={`bar-${i}`}
-                        className="absolute bottom-0 left-0 h-[3px] bg-[#e06a2c]"
-                        initial={{ width: "0%" }}
-                        animate={{ width: "100%" }}
-                        transition={{
-                          duration: INTERVAL / 1000,
-                          ease: "linear",
-                        }}
-                      />
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[11px] leading-tight font-semibold transition-colors",
-                      active ? "text-white" : "text-white/50",
-                    )}
-                  >
-                    {shortName(d.name)}
-                  </span>
+                  )}
                 </button>
               );
             })}
           </div>
-        </motion.div>
+
+          <div className="flex gap-1.5 overflow-x-auto lg:hidden">
+            {SLIDES_DATA.map((d, n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setI(n)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1 text-[12px] font-semibold",
+                  n === i
+                    ? "border-[#e06a2c] bg-[#e06a2c] text-white"
+                    : "border-white/15 text-white/60",
+                )}
+              >
+                {shortName(d.name)}
+              </button>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="relative h-[330px] min-w-0 lg:flex-1 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(ellipse_at_70%_90%,rgba(224,106,44,.2),transparent_55%),linear-gradient(160deg,rgba(23,27,33,.92),rgba(10,12,15,.96))] shadow-[0_30px_80px_rgba(0,0,0,.5)] sm:h-[400px] min-[1700px]:h-[500px]"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={i}
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="pointer-events-none absolute -top-6 right-[8%] font-heading text-[220px] leading-none font-bold text-white/[.04] select-none">
+                  {num}
+                </div>
+                <span className="absolute top-4 left-4 z-10 rounded-lg bg-[#e06a2c] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-widest text-white uppercase">
+                  {s.tag}
+                </span>
+                <motion.img
+                  src={s.battery}
+                  alt={s.name}
+                  className="absolute top-[7%] left-[3%] h-[66%] w-[68%] object-contain object-left-top drop-shadow-[0_24px_28px_rgba(0,0,0,.65)]"
+                  initial={{ y: -80, opacity: 0, scale: 0.94 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 70, damping: 14 }}
+                />
+                <motion.img
+                  src={s.truck}
+                  alt={s.tag}
+                  className="absolute right-[4%] bottom-[16%] h-[40%] w-[26%] object-contain object-bottom drop-shadow-[0_16px_20px_rgba(0,0,0,.6)]"
+                  initial={{ x: 120, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 60,
+                    damping: 14,
+                    delay: 0.2,
+                  }}
+                />
+                <div className="absolute right-6 bottom-4 left-6 flex items-end justify-between gap-3">
+                  <div>
+                    <div className="font-heading text-[20px] leading-tight font-bold sm:text-[26px]">
+                      {s.name}
+                    </div>
+                    <div className="mt-1 font-mono text-[10.5px] tracking-[.2em] text-white/45 uppercase">
+                      Drawings by voltage · Ah · tray size
+                    </div>
+                  </div>
+                  <span className="font-mono text-[12px] text-white/40">
+                    {num} / {String(SLIDES_DATA.length).padStart(2, "0")}
+                  </span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+        </div>
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-wider text-white/45 uppercase"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-white/10 pt-5 xl:grid-cols-4"
         >
-          <span>Search by vehicle</span>
-          <ArrowRight className="size-3 text-[#e06a2c]" />
-          <span>Closest fit suggested</span>
-          <ArrowRight className="size-3 text-[#e06a2c]" />
-          <span>Raise a request if missing</span>
-          <ArrowRight className="size-3 text-[#e06a2c]" />
-          <span>Engineering uploads</span>
+          {FEATURES.map((f) => (
+            <div key={f.t} className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[.04] text-[#e06a2c]">
+                <f.icon className="size-[18px]" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[14px] font-semibold">{f.t}</div>
+                <div className="text-[12.5px] leading-snug text-white/50">
+                  {f.d}
+                </div>
+              </div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>
