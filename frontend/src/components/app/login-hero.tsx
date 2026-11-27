@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowRight,
   FilePlus2,
   Search,
   ShieldCheck,
@@ -12,6 +13,22 @@ import { SLIDES_DATA } from "./showcase-images";
 
 const ORANGE = "#e06a2c";
 const INTERVAL = 5200;
+
+const CHIPS = [
+  "Voltage",
+  "Ah rating",
+  "Tray size",
+  "Connector",
+  "AFS",
+  "Drain holes",
+];
+
+const STEPS = [
+  ["Marketing", "Searches the drawing"],
+  ["Portal", "Suggests the closest fit"],
+  ["Marketing", "Raises a request"],
+  ["Engineering", "Uploads and notifies"],
+];
 
 const FEATURES: { icon: LucideIcon; t: string; d: string }[] = [
   { icon: Search, t: "Search", d: "by vehicle, battery and tray size" },
@@ -322,6 +339,16 @@ export function LoginHero() {
                 <div className="pointer-events-none absolute -top-6 right-[8%] font-heading text-[220px] leading-none font-bold text-white/[.04] select-none">
                   {num}
                 </div>
+                <div className="absolute top-4 right-4 z-10 hidden max-w-[52%] flex-wrap justify-end gap-1.5 sm:flex">
+                  {CHIPS.map((c) => (
+                    <span
+                      key={c}
+                      className="rounded-md border border-white/12 bg-white/[.06] px-2 py-1 font-mono text-[10.5px] tracking-wider text-white/65 uppercase"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
                 <span className="absolute top-4 left-4 z-10 rounded-lg bg-[#e06a2c] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-widest text-white uppercase">
                   {s.tag}
                 </span>
@@ -383,6 +410,35 @@ export function LoginHero() {
                   {f.d}
                 </div>
               </div>
+            </div>
+          ))}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="mt-5 flex flex-wrap items-center gap-2"
+        >
+          {STEPS.map(([who, what], n) => (
+            <div key={n} className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px]",
+                  n === 0
+                    ? "border-[#e06a2c]/60 bg-[#e06a2c]/10"
+                    : "border-white/12 bg-white/[.04]",
+                )}
+              >
+                <span className="font-mono text-[#5fa850]">
+                  {String(n + 1).padStart(2, "0")}
+                </span>
+                <span className="font-semibold">{who}</span>
+                <span className="text-white/55">· {what}</span>
+              </div>
+              {n < STEPS.length - 1 && (
+                <ArrowRight className="hidden size-3.5 text-white/30 min-[1700px]:block" />
+              )}
             </div>
           ))}
         </motion.div>
