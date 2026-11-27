@@ -8,15 +8,123 @@ const ORANGE = "#e06a2c";
 const GREEN = "#5fa850";
 const INTERVAL = 5200;
 
-const PARTICLES = Array.from({ length: 22 }, (_, n) => ({
-  left: (n * 37 + 11) % 100,
-  size: 2 + (n % 3),
-  delay: (n * 0.9) % 11,
-  duration: 9 + (n % 6) * 2,
-  color: n % 4 === 0 ? GREEN : ORANGE,
-}));
-
 const FILTERS = ["Voltage", "Ah rating", "Tray size", "Connector"];
+
+const LINE = "rgba(214,220,227,.5)";
+const DIM = "rgba(154,164,175,.55)";
+
+function Blueprint() {
+  const draw = (delay: number, dur = 1.6) => ({
+    initial: { pathLength: 0, opacity: 0 },
+    animate: { pathLength: 1, opacity: 1 },
+    transition: { duration: dur, delay, ease: "easeInOut" as const },
+  });
+  const cells = Array.from({ length: 12 }, (_, n) => ({
+    x: 70 + (n % 6) * 92,
+    y: 70 + Math.floor(n / 6) * 112,
+  }));
+  return (
+    <svg
+      className="absolute top-[9%] right-0 h-[90%] w-[62%] min-w-[640px] opacity-90 [mask-image:linear-gradient(to_left,black_55%,transparent)]"
+      viewBox="0 0 700 560"
+      preserveAspectRatio="xMaxYMin meet"
+      fill="none"
+      strokeWidth="1.2"
+    >
+      <motion.rect
+        x="40"
+        y="40"
+        width="620"
+        height="260"
+        rx="22"
+        stroke={LINE}
+        {...draw(0.2)}
+      />
+      <motion.rect
+        x="54"
+        y="54"
+        width="592"
+        height="232"
+        rx="14"
+        stroke={LINE}
+        {...draw(0.5)}
+      />
+      <motion.path
+        d="M64 66 q10 -14 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"
+        stroke={ORANGE}
+        strokeOpacity=".8"
+        {...draw(0.8, 2.2)}
+      />
+      {cells.map((c, n) => (
+        <motion.g key={n} {...draw(1 + n * 0.08, 0.9)}>
+          <rect x={c.x} y={c.y} width="80" height="96" stroke={LINE} />
+          <circle cx={c.x + 14} cy={c.y + 14} r="6" stroke={LINE} />
+          <circle cx={c.x + 66} cy={c.y + 14} r="6" stroke={LINE} />
+          <path
+            d={`M${c.x + 10} ${c.y + 44}h60M${c.x + 10} ${c.y + 58}h60M${c.x + 10} ${c.y + 72}h60`}
+            stroke={DIM}
+          />
+        </motion.g>
+      ))}
+      <motion.path
+        d="M40 330h620M40 322v16M660 322v16"
+        stroke={DIM}
+        {...draw(1.6)}
+      />
+      <text
+        x="350"
+        y="350"
+        fill={DIM}
+        fontSize="12"
+        textAnchor="middle"
+        fontFamily="IBM Plex Mono, monospace"
+        stroke="none"
+      >
+        830
+      </text>
+      <motion.path
+        d="M690 40v260M682 40h16M682 300h16"
+        stroke={DIM}
+        {...draw(1.8)}
+      />
+      <motion.path
+        d="M20 170h20M350 20v20"
+        stroke={ORANGE}
+        strokeOpacity=".7"
+        {...draw(1.4)}
+      />
+      <motion.rect
+        x="360"
+        y="380"
+        width="300"
+        height="130"
+        stroke={LINE}
+        {...draw(1.2)}
+      />
+      <motion.path
+        d="M376 410h268M376 440h268M376 470h268"
+        stroke={DIM}
+        {...draw(1.7)}
+      />
+      <circle cx="396" cy="396" r="5" stroke={LINE} />
+      <circle cx="624" cy="396" r="5" stroke={LINE} />
+      <g stroke="none" fontFamily="IBM Plex Mono, monospace">
+        <rect
+          x="150"
+          y="2"
+          width="56"
+          height="20"
+          rx="3"
+          fill={ORANGE}
+          fillOpacity=".3"
+        />
+        <text x="178" y="16" fill={ORANGE} fontSize="11" textAnchor="middle">
+          REV B
+        </text>
+      </g>
+    </svg>
+  );
+}
 
 export function LoginBackdrop() {
   return (
@@ -25,37 +133,26 @@ export function LoginBackdrop() {
       aria-hidden="true"
     >
       <style>{`
-        @keyframes login-floor { from { background-position: 0 0 } to { background-position: 0 64px } }
-        @keyframes login-rise { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: .9 } 100% { transform: translateY(-85vh); opacity: 0 } }
         @keyframes login-flow { to { stroke-dashoffset: -60 } }
         @keyframes login-pulse { 0%,100% { opacity: .55; transform: scale(1) } 50% { opacity: 1; transform: scale(1.08) } }
         @media (prefers-reduced-motion: reduce) {
           .login-anim, .login-anim * { animation: none !important; }
         }
       `}</style>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_35%_-10%,rgba(255,255,255,.10),transparent_50%),radial-gradient(circle_at_8%_8%,rgba(224,106,44,.30),transparent_42%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.18),transparent_40%)]" />
-      <div className="absolute inset-0 [background-image:radial-gradient(rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:26px_26px]" />
-      <div className="absolute inset-x-0 bottom-0 h-[46%] [mask-image:linear-gradient(to_top,black_20%,transparent)] [perspective:520px]">
-        <div
-          className="absolute -inset-x-1/2 top-0 h-[260%] origin-top [transform:rotateX(68deg)] [background-image:linear-gradient(rgba(224,106,44,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(224,106,44,.22)_1px,transparent_1px)] [background-size:64px_64px]"
-          style={{ animation: "login-floor 2.4s linear infinite" }}
-        />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_35%_-10%,rgba(255,255,255,.08),transparent_50%),radial-gradient(circle_at_8%_8%,rgba(224,106,44,.30),transparent_42%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.18),transparent_40%)]" />
+      <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)] [background-size:28px_28px]" />
+      <Blueprint />
+      <div className="absolute top-3 right-[3%] hidden rounded border border-white/15 bg-black/20 px-4 py-3 font-mono text-[12px] leading-6 tracking-[.18em] text-white/50 uppercase lg:block">
+        <div>
+          Drawing no. <span className="ml-3 text-white/80">25 600 002 B</span>
+        </div>
+        <div>
+          Battery <span className="ml-3 text-white/80">48V · 775 Ah</span>
+        </div>
+        <div>
+          Rev · scale <span className="ml-3 text-[#5fa850]">B · 1:10</span>
+        </div>
       </div>
-      {PARTICLES.map((p, n) => (
-        <span
-          key={n}
-          className="absolute bottom-0 rounded-full"
-          style={{
-            left: `${p.left}%`,
-            width: p.size,
-            height: p.size,
-            background: p.color,
-            boxShadow: `0 0 10px ${p.color}`,
-            opacity: 0,
-            animation: `login-rise ${p.duration}s linear ${p.delay}s infinite`,
-          }}
-        />
-      ))}
     </div>
   );
 }
@@ -179,34 +276,6 @@ export function LoginHero() {
                 />
               </motion.div>
 
-              <svg
-                className="absolute inset-0 h-full w-full"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-              >
-                <motion.path
-                  d="M54,40 C60,26 64,60 72,48"
-                  fill="none"
-                  stroke={ORANGE}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.55 }}
-                  transition={{ duration: 0.9, delay: 1 }}
-                />
-                <path
-                  d="M54,40 C60,26 64,60 72,48"
-                  fill="none"
-                  stroke="#ffd2b0"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeDasharray="6 54"
-                  vectorEffect="non-scaling-stroke"
-                  className="login-anim"
-                  style={{ animation: "login-flow 1.6s linear 1.9s infinite" }}
-                />
-              </svg>
 
               <div className="absolute top-[11%] left-4 hidden flex-col gap-2.5 sm:flex">
                 {FILTERS.map((f, n) => (
