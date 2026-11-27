@@ -1,323 +1,22 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FilePlus2, Search, ShieldCheck, Target } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SLIDES_DATA } from "./showcase-images";
 
-function cloudPath(x: number, y: number, w: number, h: number, r: number) {
-  const nx = Math.round(w / (r * 2));
-  const ny = Math.round(h / (r * 2));
-  const sx = w / nx;
-  const sy = h / ny;
-  let d = `M${x},${y}`;
-  for (let k = 0; k < nx; k++) d += `a${sx / 2},${r} 0 0 1 ${sx},0`;
-  for (let k = 0; k < ny; k++) d += `a${r},${sy / 2} 0 0 1 0,${sy}`;
-  for (let k = 0; k < nx; k++) d += `a${sx / 2},${r} 0 0 1 ${-sx},0`;
-  for (let k = 0; k < ny; k++) d += `a${r},${sy / 2} 0 0 1 0,${-sy}`;
-  return d + "Z";
-}
+const ORANGE = "#e06a2c";
+const GREEN = "#5fa850";
+const INTERVAL = 5200;
 
-const COLS = 6;
-const ROWS = 3;
-const CELL_W = 72;
-const CELL_H = 82;
-const GAP = 8;
+const PARTICLES = Array.from({ length: 22 }, (_, n) => ({
+  left: (n * 37 + 11) % 100,
+  size: 2 + (n % 3),
+  delay: (n * 0.9) % 11,
+  duration: 9 + (n % 6) * 2,
+  color: n % 4 === 0 ? GREEN : ORANGE,
+}));
 
-function DrawLine({
-  d,
-  delay = 0,
-  color = "#fff",
-  width = 1.4,
-  dash,
-}: {
-  d: string;
-  delay?: number;
-  color?: string;
-  width?: number;
-  dash?: string;
-}) {
-  return (
-    <path
-      d={d}
-      pathLength={1}
-      fill="none"
-      stroke={color}
-      strokeWidth={width}
-      strokeDasharray={dash}
-      className="login-draw"
-      style={{ animationDelay: `${delay}s` }}
-    />
-  );
-}
-
-function TrayTopView() {
-  const cells: { x: number; y: number }[] = [];
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      cells.push({ x: 24 + c * (CELL_W + GAP), y: 34 + r * (CELL_H + GAP) });
-  const snake = Array.from({ length: ROWS }, (_, r) => {
-    const ys = 34 + r * (CELL_H + GAP) + 14;
-    const x0 = 24 + CELL_W / 2;
-    const x1 = 24 + (COLS - 1) * (CELL_W + GAP) + CELL_W / 2;
-    const down = r < ROWS - 1 ? `V${ys + CELL_H + GAP}` : "";
-    return r % 2 === 0
-      ? `M${x0},${ys}H${x1}${down}`
-      : `M${x1},${ys}H${x0}${down}`;
-  });
-  const flow = (() => {
-    let d = "";
-    for (let r = 0; r < ROWS; r++) {
-      const ys = 34 + r * (CELL_H + GAP) + 14;
-      const x0 = 24 + CELL_W / 2;
-      const x1 = 24 + (COLS - 1) * (CELL_W + GAP) + CELL_W / 2;
-      if (r === 0) d += `M${x0},${ys}H${x1}V${ys + CELL_H + GAP}`;
-      else if (r % 2 === 1) d += `H${x0}V${ys + CELL_H + GAP}`;
-      else d += `H${x1}`;
-    }
-    return d;
-  })();
-  return (
-    <g transform="translate(790,150)" stroke="#fff" fill="none" opacity=".26">
-      <DrawLine
-        d="M0,10a10,10 0 0 1 10,-10H510a10,10 0 0 1 10,10V320a10,10 0 0 1 -10,10H10a10,10 0 0 1 -10,-10Z"
-        width={1.8}
-      />
-      <DrawLine
-        d="M14,16a6,6 0 0 1 6,-6H500a6,6 0 0 1 6,6V314a6,6 0 0 1 -6,6H20a6,6 0 0 1 -6,-6Z"
-        delay={0.4}
-      />
-      {cells.map((c, n) => (
-        <g key={n}>
-          <DrawLine
-            d={`M${c.x},${c.y}h${CELL_W}v${CELL_H}h${-CELL_W}Z`}
-            delay={0.8 + n * 0.07}
-            width={1.1}
-          />
-          <circle
-            cx={c.x + 18}
-            cy={c.y + 14}
-            r="6"
-            className="login-fade"
-            style={{ animationDelay: `${1.4 + n * 0.07}s` }}
-          />
-          <circle
-            cx={c.x + 54}
-            cy={c.y + 14}
-            r="6"
-            className="login-fade"
-            style={{ animationDelay: `${1.4 + n * 0.07}s` }}
-          />
-          <path
-            d={`M${c.x + 12},${c.y + 42}h48M${c.x + 12},${c.y + 52}h48M${c.x + 12},${c.y + 62}h48`}
-            strokeWidth=".7"
-            className="login-fade"
-            style={{ animationDelay: `${1.8 + n * 0.07}s` }}
-          />
-        </g>
-      ))}
-      {snake.map((d, n) => (
-        <DrawLine key={n} d={d} delay={2.6 + n * 0.3} width={1.2} />
-      ))}
-      <circle cx="-2" cy="165" r="7" />
-      <circle cx="522" cy="165" r="7" />
-      <DrawLine
-        d="M-40,165H560M260,-40V370"
-        delay={3}
-        width={0.8}
-        dash="0.03 0.012 0.006 0.012"
-      />
-      <g strokeWidth="1">
-        <DrawLine d="M0,372V392M520,372V392M0,386H520" delay={3.4} />
-        <DrawLine d="M562,0H582M562,330H582M576,0V330" delay={3.6} />
-        <path
-          d="M0,386l8,-3v6zM520,386l-8,-3v6zM576,0l-3,8h6zM576,330l-3,-8h6z"
-          fill="#fff"
-          stroke="none"
-          className="login-fade"
-          style={{ animationDelay: "4s" }}
-        />
-      </g>
-      <g
-        fill="#fff"
-        stroke="none"
-        fontFamily="IBM Plex Mono, monospace"
-        fontSize="13"
-        className="login-fade"
-        style={{ animationDelay: "4.2s" }}
-      >
-        <text x="260" y="381" textAnchor="middle">
-          830
-        </text>
-        <text
-          x="598"
-          y="170"
-          textAnchor="middle"
-          transform="rotate(90 598 165)"
-        >
-          735
-        </text>
-      </g>
-      <g opacity="1" stroke="none" fill="none">
-        <path
-          d={flow}
-          stroke="#e06a2c"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeDasharray="8 46"
-          className="login-flow"
-          style={{ opacity: 0.95 }}
-        />
-      </g>
-      <g className="login-fade" style={{ animationDelay: "4.6s" }}>
-        <path
-          d={cloudPath(14, 22, CELL_W * 2 + GAP + 20, CELL_H + 24, 7)}
-          stroke="#e06a2c"
-          strokeWidth="1.8"
-        />
-        <path d="M60,22V-18" stroke="#e06a2c" strokeWidth="1.2" />
-        <rect
-          x="32"
-          y="-38"
-          width="56"
-          height="20"
-          fill="#e06a2c"
-          stroke="none"
-          rx="2"
-        />
-        <text
-          x="60"
-          y="-24"
-          textAnchor="middle"
-          fill="#fff"
-          stroke="none"
-          fontFamily="IBM Plex Mono, monospace"
-          fontSize="12"
-          fontWeight="700"
-        >
-          REV B
-        </text>
-      </g>
-    </g>
-  );
-}
-
-function ElevationView() {
-  return (
-    <g
-      transform="translate(1010,700) scale(.8)"
-      stroke="#fff"
-      fill="none"
-      opacity=".2"
-    >
-      <DrawLine d="M0,0H330V150H0Z" delay={1} width={1.6} />
-      <DrawLine d="M0,22H330" delay={1.4} />
-      <DrawLine d="M-14,0V-22H14M344,0V-22H316" delay={1.8} />
-      <DrawLine
-        d="M40,50H290M40,76H290M40,102H290M40,128H290"
-        delay={2.2}
-        width={0.8}
-      />
-      <circle
-        cx="58"
-        cy="11"
-        r="4"
-        className="login-fade"
-        style={{ animationDelay: "2.8s" }}
-      />
-      <circle
-        cx="272"
-        cy="11"
-        r="4"
-        className="login-fade"
-        style={{ animationDelay: "2.8s" }}
-      />
-      <DrawLine d="M350,0H368M350,150H368M362,0V150" delay={3} />
-      <text
-        x="380"
-        y="80"
-        fill="#fff"
-        stroke="none"
-        fontFamily="IBM Plex Mono, monospace"
-        fontSize="13"
-        className="login-fade"
-        style={{ animationDelay: "3.6s" }}
-      >
-        630
-      </text>
-    </g>
-  );
-}
-
-function TitleBlock() {
-  const mono = "IBM Plex Mono, monospace";
-  return (
-    <g
-      transform="translate(1040,24)"
-      fontFamily={mono}
-      className="login-fade"
-      style={{ animationDelay: "1.2s" }}
-    >
-      <rect
-        width="340"
-        height="112"
-        fill="none"
-        stroke="#fff"
-        strokeOpacity=".28"
-        strokeWidth="1.2"
-      />
-      <path d="M0,34H340M120,34V112" stroke="#fff" strokeOpacity=".2" />
-      <text
-        x="14"
-        y="23"
-        fill="#e06a2c"
-        fontSize="13"
-        fontWeight="700"
-        letterSpacing="3"
-      >
-        AMARON BRUTE
-      </text>
-      <text
-        x="14"
-        y="56"
-        fill="#fff"
-        fillOpacity=".45"
-        fontSize="10"
-        letterSpacing="1.5"
-      >
-        DRAWING NO.
-      </text>
-      <text x="132" y="56" fill="#fff" fillOpacity=".7" fontSize="14">
-        25 600 002 B
-      </text>
-      <text
-        x="14"
-        y="82"
-        fill="#fff"
-        fillOpacity=".45"
-        fontSize="10"
-        letterSpacing="1.5"
-      >
-        BATTERY
-      </text>
-      <text x="132" y="82" fill="#fff" fillOpacity=".7" fontSize="14">
-        48V · 775 AH
-      </text>
-      <text
-        x="14"
-        y="102"
-        fill="#fff"
-        fillOpacity=".45"
-        fontSize="10"
-        letterSpacing="1.5"
-      >
-        REV · SCALE
-      </text>
-      <text x="132" y="102" fill="#5fa850" fontSize="12">
-        B · 1:10
-      </text>
-    </g>
-  );
-}
+const FILTERS = ["Voltage", "Ah rating", "Tray size", "Connector"];
 
 export function LoginBackdrop() {
   return (
@@ -326,47 +25,42 @@ export function LoginBackdrop() {
       aria-hidden="true"
     >
       <style>{`
-        @keyframes login-draw { to { stroke-dashoffset: 0; } }
-        @keyframes login-fade { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes login-flow { to { stroke-dashoffset: -54; } }
-        .login-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: login-draw 2.6s ease-out forwards; }
-        .login-fade { opacity: 0; animation: login-fade 1s ease-out forwards; }
-        .login-flow { animation: login-flow 3.2s linear infinite; }
+        @keyframes login-floor { from { background-position: 0 0 } to { background-position: 0 64px } }
+        @keyframes login-rise { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: .9 } 100% { transform: translateY(-85vh); opacity: 0 } }
+        @keyframes login-flow { to { stroke-dashoffset: -60 } }
+        @keyframes login-pulse { 0%,100% { opacity: .55; transform: scale(1) } 50% { opacity: 1; transform: scale(1.08) } }
         @media (prefers-reduced-motion: reduce) {
-          .login-anim *, .login-anim { animation: none !important; }
-          .login-draw { stroke-dashoffset: 0; }
-          .login-fade { opacity: 1; }
+          .login-anim, .login-anim * { animation: none !important; }
         }
       `}</style>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(224,106,44,.28),transparent_45%),radial-gradient(circle_at_60%_75%,rgba(224,106,44,.10),transparent_40%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.18),transparent_40%)]" />
-      <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:120px_120px,120px_120px,24px_24px,24px_24px]" />
-      <svg
-        className="absolute inset-0 hidden h-full w-full lg:block"
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <TrayTopView />
-        <ElevationView />
-        <TitleBlock />
-      </svg>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_35%_-10%,rgba(255,255,255,.10),transparent_50%),radial-gradient(circle_at_8%_8%,rgba(224,106,44,.30),transparent_42%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.18),transparent_40%)]" />
+      <div className="absolute inset-0 [background-image:radial-gradient(rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:26px_26px]" />
+      <div className="absolute inset-x-0 bottom-0 h-[46%] [mask-image:linear-gradient(to_top,black_20%,transparent)] [perspective:520px]">
+        <div
+          className="absolute -inset-x-1/2 top-0 h-[260%] origin-top [transform:rotateX(68deg)] [background-image:linear-gradient(rgba(224,106,44,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(224,106,44,.22)_1px,transparent_1px)] [background-size:64px_64px]"
+          style={{ animation: "login-floor 2.4s linear infinite" }}
+        />
+      </div>
+      {PARTICLES.map((p, n) => (
+        <span
+          key={n}
+          className="absolute bottom-0 rounded-full"
+          style={{
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            boxShadow: `0 0 10px ${p.color}`,
+            opacity: 0,
+            animation: `login-rise ${p.duration}s linear ${p.delay}s infinite`,
+          }}
+        />
+      ))}
     </div>
   );
 }
 
 const shortName = (n: string) => n.replace(/ Battery Bank$/, "");
-
-const FEATURES = [
-  { icon: Search, title: "Search", text: "by vehicle, battery and tray size" },
-  {
-    icon: Target,
-    title: "Closest fit",
-    text: "standard alternatives suggested",
-  },
-  { icon: FilePlus2, title: "Request", text: "modification or new drawing" },
-  { icon: ShieldCheck, title: "Traceable", text: "every revision on record" },
-];
-
-const INTERVAL = 4200;
 
 export function LoginHero() {
   const [i, setI] = useState(0);
@@ -386,7 +80,7 @@ export function LoginHero() {
 
   return (
     <section
-      className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 text-white lg:py-10 lg:pr-4 lg:pl-14"
+      className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 text-white lg:py-8 lg:pr-4 lg:pl-14"
       aria-label="About the portal"
     >
       <div className="mx-auto w-full max-w-[1040px] lg:mx-0 lg:max-w-none">
@@ -415,18 +109,18 @@ export function LoginHero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.05 }}
-          className="mt-6"
+          className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-2"
         >
-          <h1 className="font-heading text-[32px] leading-[1.1] font-bold tracking-tight sm:text-[40px] xl:text-[46px]">
-            Find the right drawing for
+          <h1 className="font-heading text-[30px] leading-[1.08] font-bold tracking-tight sm:text-[38px] xl:text-[44px]">
+            Vehicle. Battery. Drawing.
             <br />
             <span className="bg-gradient-to-r from-[#e06a2c] to-[#ff9a62] bg-clip-text text-transparent">
-              every battery bank.
+              Found in one search.
             </span>
           </h1>
-          <p className="mt-3 max-w-[620px] text-[14px] leading-relaxed text-white/60">
+          <p className="max-w-[330px] text-[13.5px] leading-relaxed text-white/55">
             Search, download and request tray drawings for every vehicle we
-            power. Always the latest revision, always on record.
+            power. Always the latest revision.
           </p>
         </motion.div>
 
@@ -436,9 +130,154 @@ export function LoginHero() {
           transition={{ duration: 0.6, delay: 0.15 }}
           onMouseEnter={() => setHold(true)}
           onMouseLeave={() => setHold(false)}
-          className="mt-6 grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)]"
+          className="relative mt-5 h-[330px] overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(ellipse_at_72%_80%,rgba(224,106,44,.22),transparent_55%),linear-gradient(160deg,rgba(23,27,33,.92),rgba(10,12,15,.96))] shadow-[0_30px_80px_rgba(0,0,0,.5)] sm:h-[390px] min-[1700px]:h-[520px]"
         >
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
+          <div className="absolute inset-x-0 bottom-[54px] h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={i}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div
+                className="absolute right-[6%] bottom-[34px] h-8 w-[38%] rounded-[50%] bg-[#e06a2c]/35 blur-2xl"
+                style={{ animation: "login-pulse 2.8s ease-in-out infinite" }}
+              />
+              <motion.img
+                src={s.truck}
+                alt={s.tag}
+                className="absolute right-[3%] bottom-[48px] h-[64%] w-[42%] object-contain object-bottom drop-shadow-[0_20px_24px_rgba(0,0,0,.6)]"
+                initial={{ x: 220, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 60, damping: 14 }}
+              />
+              <motion.div
+                className="absolute top-[7%] left-[19%] h-[58%] w-[36%]"
+                initial={{ y: -170, opacity: 0, rotate: -4 }}
+                animate={{ y: 0, opacity: 1, rotate: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 70,
+                  damping: 11,
+                  delay: 0.25,
+                }}
+              >
+                <motion.img
+                  src={s.battery}
+                  alt={s.name}
+                  className="h-full w-full object-contain drop-shadow-[0_24px_28px_rgba(0,0,0,.65)]"
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{
+                    duration: 4.2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 1,
+                  }}
+                />
+              </motion.div>
+
+              <svg
+                className="absolute inset-0 h-full w-full"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+              >
+                <motion.path
+                  d="M54,40 C60,26 64,60 72,48"
+                  fill="none"
+                  stroke={ORANGE}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.55 }}
+                  transition={{ duration: 0.9, delay: 1 }}
+                />
+                <path
+                  d="M54,40 C60,26 64,60 72,48"
+                  fill="none"
+                  stroke="#ffd2b0"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray="6 54"
+                  vectorEffect="non-scaling-stroke"
+                  className="login-anim"
+                  style={{ animation: "login-flow 1.6s linear 1.9s infinite" }}
+                />
+              </svg>
+
+              <div className="absolute top-[11%] left-4 hidden flex-col gap-2.5 sm:flex">
+                {FILTERS.map((f, n) => (
+                  <motion.div
+                    key={f}
+                    className="flex items-center gap-2"
+                    initial={{ opacity: 0, x: -14 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 + n * 0.12 }}
+                  >
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ background: n % 2 ? GREEN : ORANGE }}
+                    />
+                    <span className="rounded-md border border-white/12 bg-white/[.06] px-2 py-0.5 font-mono text-[10.5px] tracking-wider text-white/70 uppercase">
+                      {f}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                className="absolute top-4 right-5 flex items-center gap-2"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <span className="font-mono text-[11px] text-white/40">
+                  {num} / {String(SLIDES_DATA.length).padStart(2, "0")}
+                </span>
+              </motion.div>
+
+              <motion.div
+                className="absolute right-6 bottom-3.5 left-6 flex items-end justify-between gap-3"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55 }}
+              >
+                <div>
+                  <div className="font-heading text-[19px] leading-tight font-bold sm:text-[23px]">
+                    {s.name}
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] tracking-[.18em] text-white/45 uppercase">
+                    <Zap className="size-3 text-[#e06a2c]" />
+                    Powers the {s.tag}
+                  </div>
+                </div>
+                <motion.div
+                  className="flex items-center gap-2 rounded-full border border-[#5fa850]/40 bg-[#5fa850]/10 px-3 py-1 text-[11px] font-semibold text-[#9bd48e]"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.7 }}
+                >
+                  <span className="size-1.5 animate-pulse rounded-full bg-[#5fa850]" />
+                  Drawings online
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          onMouseEnter={() => setHold(true)}
+          onMouseLeave={() => setHold(false)}
+          className="relative mt-4"
+        >
+          <div className="absolute top-[23px] right-6 left-6 h-px bg-gradient-to-r from-white/5 via-white/20 to-white/5" />
+          <div className="relative flex gap-2 overflow-x-auto pb-1">
             {SLIDES_DATA.map((d, n) => {
               const active = n === i;
               return (
@@ -446,149 +285,66 @@ export function LoginHero() {
                   key={n}
                   type="button"
                   onClick={() => setI(n)}
-                  className={cn(
-                    "relative flex shrink-0 items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-left transition-all duration-300 lg:shrink",
-                    active
-                      ? "bg-gradient-to-r from-[#e06a2c] to-[#c85a1f] text-white shadow-[0_10px_30px_rgba(224,106,44,.35)]"
-                      : "text-white/55 hover:bg-white/[.06] hover:text-white",
-                  )}
+                  className="group relative flex min-w-[84px] flex-1 flex-col items-center gap-1.5 text-center"
                 >
                   <span
                     className={cn(
-                      "font-mono text-[11px] font-bold",
-                      active ? "text-white/80" : "text-[#5fa850]",
+                      "relative flex h-[46px] w-full max-w-[96px] items-center justify-center overflow-hidden rounded-xl border bg-[#12151a] px-2 transition-all duration-300",
+                      active
+                        ? "border-[#e06a2c] shadow-[0_0_26px_rgba(224,106,44,.4)]"
+                        : "border-white/12 group-hover:border-white/30",
                     )}
                   >
-                    {String(n + 1).padStart(2, "0")}
-                  </span>
-                  <span className="leading-tight">
-                    <span className="block text-[13px] font-bold whitespace-nowrap">
-                      {shortName(d.name)}
-                    </span>
-                    <span
+                    <img
+                      src={d.truck}
+                      alt=""
                       className={cn(
-                        "block text-[10.5px] whitespace-nowrap",
-                        active ? "text-white/75" : "text-white/35",
+                        "h-9 w-full object-contain transition-all duration-300",
+                        active
+                          ? "scale-110"
+                          : "opacity-60 group-hover:opacity-100",
                       )}
-                    >
-                      Battery bank
-                    </span>
-                  </span>
-                  {active && !hold && (
-                    <motion.span
-                      key={`bar-${i}`}
-                      className="absolute bottom-0 left-0 h-[3px] bg-white/70"
-                      initial={{ width: "0%" }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: INTERVAL / 1000, ease: "linear" }}
                     />
-                  )}
+                    {active && !hold && (
+                      <motion.span
+                        key={`bar-${i}`}
+                        className="absolute bottom-0 left-0 h-[3px] bg-[#e06a2c]"
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{
+                          duration: INTERVAL / 1000,
+                          ease: "linear",
+                        }}
+                      />
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[11px] leading-tight font-semibold transition-colors",
+                      active ? "text-white" : "text-white/50",
+                    )}
+                  >
+                    {shortName(d.name)}
+                  </span>
                 </button>
               );
             })}
           </div>
-
-          <div className="relative h-[300px] overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(ellipse_at_30%_55%,rgba(224,106,44,.22),transparent_60%),linear-gradient(160deg,#171b21,#0c0f12)] shadow-[0_24px_70px_rgba(0,0,0,.45)] sm:h-[380px] xl:h-[410px] min-[1700px]:h-[560px]">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={i}
-                className="absolute inset-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <motion.div
-                  className="absolute -top-6 right-4 font-heading text-[190px] leading-none font-extrabold text-white/[.045] select-none sm:text-[240px]"
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.7 }}
-                >
-                  {num}
-                </motion.div>
-                <div className="absolute bottom-[34px] left-[6%] h-6 w-[58%] rounded-[50%] bg-black/60 blur-xl" />
-                <div className="absolute right-[3%] bottom-[28px] h-5 w-[40%] rounded-[50%] bg-black/55 blur-lg" />
-                <motion.div
-                  className="absolute top-[3%] bottom-[15%] left-[3%] w-[64%]"
-                  initial={{ x: -60, opacity: 0, scale: 0.92 }}
-                  animate={{ x: 0, opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.7, ease: "easeOut" }}
-                >
-                  <motion.img
-                    src={s.battery}
-                    alt={s.name}
-                    className="h-full w-full object-contain drop-shadow-[0_22px_26px_rgba(0,0,0,.6)]"
-                    animate={{ y: [0, -7, 0] }}
-                    transition={{
-                      duration: 4.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                </motion.div>
-                <motion.img
-                  src={s.truck}
-                  alt={s.tag}
-                  className="absolute right-[1%] bottom-[40px] h-[56%] w-[44%] object-contain drop-shadow-[0_16px_20px_rgba(0,0,0,.55)]"
-                  initial={{ x: 140, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 70,
-                    damping: 14,
-                    delay: 0.25,
-                  }}
-                />
-                <motion.div
-                  className="absolute top-4 left-4 flex items-center gap-2"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
-                >
-                  <span className="rounded-md bg-[#e06a2c] px-2.5 py-1 font-mono text-[10.5px] font-bold tracking-widest text-white uppercase">
-                    {s.tag}
-                  </span>
-                </motion.div>
-                <motion.div
-                  className="absolute right-5 bottom-4 left-5 flex items-end justify-between gap-3"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.45 }}
-                >
-                  <div>
-                    <div className="font-heading text-[19px] leading-tight font-bold sm:text-[22px]">
-                      {s.name}
-                    </div>
-                    <div className="font-mono text-[10.5px] tracking-[.18em] text-white/45 uppercase">
-                      Drawings by voltage · Ah · tray size
-                    </div>
-                  </div>
-                  <div className="font-mono text-[11px] text-white/40">
-                    {num} / {String(SLIDES_DATA.length).padStart(2, "0")}
-                  </div>
-                </motion.div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-4 sm:grid-cols-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-wider text-white/45 uppercase"
         >
-          {FEATURES.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex items-start gap-2.5">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[.06] text-[#e06a2c] ring-1 ring-white/10">
-                <Icon className="size-4" />
-              </span>
-              <div className="leading-tight">
-                <div className="text-[13px] font-bold">{title}</div>
-                <div className="mt-0.5 text-[11px] text-white/45">{text}</div>
-              </div>
-            </div>
-          ))}
+          <span>Search by vehicle</span>
+          <ArrowRight className="size-3 text-[#e06a2c]" />
+          <span>Closest fit suggested</span>
+          <ArrowRight className="size-3 text-[#e06a2c]" />
+          <span>Raise a request if missing</span>
+          <ArrowRight className="size-3 text-[#e06a2c]" />
+          <span>Engineering uploads</span>
         </motion.div>
       </div>
     </section>
