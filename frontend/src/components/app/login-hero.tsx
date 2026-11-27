@@ -1,17 +1,8 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FilePlus2, Search, ShieldCheck, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SLIDES_DATA } from "./showcase-images";
-
-const ORANGE = "#e06a2c";
-const GREEN = "#5fa850";
-
-const STEPS: [string, string][] = [
-  ["Marketing", "Searches the drawing"],
-  ["Portal", "Suggests the closest fit"],
-  ["Marketing", "Raises a request"],
-  ["Engineering", "Uploads and notifies"],
-];
 
 function cloudPath(x: number, y: number, w: number, h: number, r: number) {
   const nx = Math.round(w / (r * 2));
@@ -364,48 +355,58 @@ export function LoginBackdrop() {
 
 const shortName = (n: string) => n.replace(/ Battery Bank$/, "");
 
+const FEATURES = [
+  { icon: Search, title: "Search", text: "by vehicle, battery and tray size" },
+  {
+    icon: Target,
+    title: "Closest fit",
+    text: "standard alternatives suggested",
+  },
+  { icon: FilePlus2, title: "Request", text: "modification or new drawing" },
+  { icon: ShieldCheck, title: "Traceable", text: "every revision on record" },
+];
+
+const INTERVAL = 4200;
+
 export function LoginHero() {
   const [i, setI] = useState(0);
   const [hold, setHold] = useState(false);
-  const [step, setStep] = useState(0);
 
   useEffect(() => {
     if (hold) return;
-    const t = setTimeout(() => setI((x) => (x + 1) % SLIDES_DATA.length), 3600);
+    const t = setTimeout(
+      () => setI((x) => (x + 1) % SLIDES_DATA.length),
+      INTERVAL,
+    );
     return () => clearTimeout(t);
   }, [i, hold]);
 
-  useEffect(() => {
-    const t = setInterval(() => setStep((x) => (x + 1) % STEPS.length), 2200);
-    return () => clearInterval(t);
-  }, []);
-
   const s = SLIDES_DATA[i];
+  const num = String(i + 1).padStart(2, "0");
 
   return (
     <section
       className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 text-white lg:px-14 lg:py-10"
       aria-label="About the portal"
     >
-      <div className="mx-auto w-full max-w-[860px] lg:mx-0">
+      <div className="mx-auto w-full max-w-[900px] lg:mx-0">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4"
         >
-          <div className="flex h-14 items-center rounded-2xl border border-white/15 bg-white/[.06] px-4 shadow-[0_8px_30px_rgba(224,106,44,.18)] backdrop-blur">
-            <img
-              src="/brand/amaron-brute.png"
-              alt="Amaron Brute"
-              className="h-9 w-auto"
-            />
-          </div>
+          <img
+            src="/brand/amaron-brute.png"
+            alt="Amaron Brute"
+            className="h-11 w-auto"
+          />
+          <div className="h-8 w-px bg-white/20" />
           <div>
-            <div className="font-heading text-[19px] leading-tight font-bold tracking-tight uppercase">
+            <div className="font-heading text-[17px] leading-tight font-bold">
               Drawing Portal
             </div>
-            <div className="font-mono text-[11px] tracking-[.28em] text-white/45 uppercase">
-              Battery tray drawings &amp; requests
+            <div className="font-mono text-[10.5px] tracking-[.26em] text-white/45 uppercase">
+              Amara Raja · Industrial batteries
             </div>
           </div>
         </motion.div>
@@ -414,84 +415,30 @@ export function LoginHero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.05 }}
-          className="mt-7"
+          className="mt-6"
         >
-          <h1 className="font-heading text-[34px] leading-[1.08] font-bold tracking-tight sm:text-[44px] xl:text-[52px]">
-            Every battery bank drawing.
+          <h1 className="font-heading text-[32px] leading-[1.1] font-bold tracking-tight sm:text-[40px] xl:text-[46px]">
+            Find the right drawing for
             <br />
             <span className="bg-gradient-to-r from-[#e06a2c] to-[#ff9a62] bg-clip-text text-transparent">
-              Always the right revision.
+              every battery bank.
             </span>
           </h1>
-          <p className="mt-4 max-w-[680px] text-[14.5px] leading-relaxed text-white/65">
-            One intranet portal for Marketing and Application Engineering to
-            search and download drawings, get closest-fit suggestions, and raise
-            modification or new-drawing requests with full traceability.
+          <p className="mt-3 max-w-[620px] text-[14px] leading-relaxed text-white/60">
+            Search, download and request tray drawings for every vehicle we
+            power. Always the latest revision, always on record.
           </p>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.15 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
           onMouseEnter={() => setHold(true)}
           onMouseLeave={() => setHold(false)}
-          className="mt-6 rounded-3xl border border-white/10 bg-white/[.045] p-4 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-sm"
+          className="mt-6 grid gap-4 lg:grid-cols-[210px_minmax(0,1fr)]"
         >
-          <div className="mb-2 flex items-center justify-between font-mono text-[11px] font-semibold tracking-[.22em] uppercase">
-            <span style={{ color: ORANGE }}>Battery banks &amp; vehicles</span>
-            <span className="text-white/40">
-              {String(i + 1).padStart(2, "0")} /{" "}
-              {String(SLIDES_DATA.length).padStart(2, "0")}
-            </span>
-          </div>
-
-          <div className="relative h-[190px] overflow-hidden rounded-2xl bg-[radial-gradient(ellipse_at_50%_60%,rgba(224,106,44,.20),transparent_65%),linear-gradient(180deg,#14181d,#0d1013)] ring-1 ring-white/10">
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={i}
-                className="absolute inset-0 flex items-center justify-between gap-4 px-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-              >
-                <motion.img
-                  src={s.battery}
-                  alt={s.name}
-                  className="h-[168px] w-[56%] object-contain drop-shadow-[0_18px_22px_rgba(0,0,0,.55)]"
-                  initial={{ x: -40, opacity: 0, scale: 0.94 }}
-                  animate={{ x: 0, opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.55, ease: "easeOut" }}
-                />
-                <div className="relative flex h-full w-[38%] flex-col items-end justify-center">
-                  <motion.img
-                    src={s.truck}
-                    alt={s.tag}
-                    className="max-h-[128px] w-full object-contain drop-shadow-[0_14px_18px_rgba(0,0,0,.5)]"
-                    initial={{ x: 50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{
-                      duration: 0.55,
-                      delay: 0.12,
-                      ease: "easeOut",
-                    }}
-                  />
-                  <motion.span
-                    className="-mt-1 -skew-x-12 bg-[#e06a2c] px-4 py-1 text-[12px] font-extrabold tracking-wider text-white uppercase italic shadow-lg"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.4 }}
-                  >
-                    {s.tag}
-                  </motion.span>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-0.5">
+          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
             {SLIDES_DATA.map((d, n) => {
               const active = n === i;
               return (
@@ -500,90 +447,149 @@ export function LoginHero() {
                   type="button"
                   onClick={() => setI(n)}
                   className={cn(
-                    "group relative flex min-w-[88px] flex-1 flex-col items-center gap-1 overflow-hidden rounded-xl border px-2 pt-2 pb-2 text-center transition-all duration-300",
+                    "relative flex shrink-0 items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-left transition-all duration-300 lg:shrink",
                     active
-                      ? "border-[#e06a2c]/70 bg-[#e06a2c]/10 shadow-[0_0_24px_rgba(224,106,44,.25)]"
-                      : "border-white/10 bg-white/[.04] hover:border-white/25 hover:bg-white/[.07]",
+                      ? "bg-gradient-to-r from-[#e06a2c] to-[#c85a1f] text-white shadow-[0_10px_30px_rgba(224,106,44,.35)]"
+                      : "text-white/55 hover:bg-white/[.06] hover:text-white",
                   )}
                 >
-                  <img
-                    src={d.battery}
-                    alt=""
-                    className={cn(
-                      "h-10 w-full object-contain transition-all duration-300",
-                      active
-                        ? "scale-110"
-                        : "opacity-80 group-hover:opacity-100",
-                    )}
-                  />
                   <span
                     className={cn(
-                      "text-[11px] leading-tight font-semibold",
-                      active ? "text-white" : "text-white/70",
+                      "font-mono text-[11px] font-bold",
+                      active ? "text-white/80" : "text-[#5fa850]",
                     )}
                   >
-                    {shortName(d.name)}
+                    {String(n + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-[9.5px] leading-none text-white/40">
-                    Battery Bank
+                  <span className="leading-tight">
+                    <span className="block text-[13px] font-bold whitespace-nowrap">
+                      {shortName(d.name)}
+                    </span>
+                    <span
+                      className={cn(
+                        "block text-[10.5px] whitespace-nowrap",
+                        active ? "text-white/75" : "text-white/35",
+                      )}
+                    >
+                      Battery bank
+                    </span>
                   </span>
                   {active && !hold && (
                     <motion.span
                       key={`bar-${i}`}
-                      className="absolute bottom-0 left-0 h-[3px] bg-[#e06a2c]"
+                      className="absolute bottom-0 left-0 h-[3px] bg-white/70"
                       initial={{ width: "0%" }}
                       animate={{ width: "100%" }}
-                      transition={{ duration: 3.6, ease: "linear" }}
+                      transition={{ duration: INTERVAL / 1000, ease: "linear" }}
                     />
                   )}
                 </button>
               );
             })}
           </div>
+
+          <div className="relative h-[270px] overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(ellipse_at_30%_55%,rgba(224,106,44,.22),transparent_60%),linear-gradient(160deg,#171b21,#0c0f12)] shadow-[0_24px_70px_rgba(0,0,0,.45)] sm:h-[330px]">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={i}
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.div
+                  className="absolute -top-6 right-4 font-heading text-[190px] leading-none font-extrabold text-white/[.045] select-none sm:text-[240px]"
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.7 }}
+                >
+                  {num}
+                </motion.div>
+                <div className="absolute bottom-[34px] left-[6%] h-6 w-[58%] rounded-[50%] bg-black/60 blur-xl" />
+                <div className="absolute right-[3%] bottom-[28px] h-5 w-[40%] rounded-[50%] bg-black/55 blur-lg" />
+                <motion.div
+                  className="absolute top-[7%] bottom-[19%] left-[4%] w-[60%]"
+                  initial={{ x: -60, opacity: 0, scale: 0.92 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                >
+                  <motion.img
+                    src={s.battery}
+                    alt={s.name}
+                    className="h-full w-full object-contain drop-shadow-[0_22px_26px_rgba(0,0,0,.6)]"
+                    animate={{ y: [0, -7, 0] }}
+                    transition={{
+                      duration: 4.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </motion.div>
+                <motion.img
+                  src={s.truck}
+                  alt={s.tag}
+                  className="absolute right-[2%] bottom-[44px] h-[44%] w-[40%] object-contain drop-shadow-[0_16px_20px_rgba(0,0,0,.55)]"
+                  initial={{ x: 140, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 70,
+                    damping: 14,
+                    delay: 0.25,
+                  }}
+                />
+                <motion.div
+                  className="absolute top-4 left-4 flex items-center gap-2"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                >
+                  <span className="rounded-md bg-[#e06a2c] px-2.5 py-1 font-mono text-[10.5px] font-bold tracking-widest text-white uppercase">
+                    {s.tag}
+                  </span>
+                </motion.div>
+                <motion.div
+                  className="absolute right-5 bottom-4 left-5 flex items-end justify-between gap-3"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <div>
+                    <div className="font-heading text-[19px] leading-tight font-bold sm:text-[22px]">
+                      {s.name}
+                    </div>
+                    <div className="font-mono text-[10.5px] tracking-[.18em] text-white/45 uppercase">
+                      Drawings by voltage · Ah · tray size
+                    </div>
+                  </div>
+                  <div className="font-mono text-[11px] text-white/40">
+                    {num} / {String(SLIDES_DATA.length).padStart(2, "0")}
+                  </div>
+                </motion.div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="mt-3 rounded-2xl border border-white/10 bg-white/[.045] px-5 py-2.5 text-center backdrop-blur-sm"
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-4 sm:grid-cols-4"
         >
-          <div
-            className="font-mono text-[10.5px] font-bold tracking-[.25em] uppercase"
-            style={{ color: ORANGE }}
-          >
-            Quality principle
-          </div>
-          <div className="font-heading text-[14.5px] font-semibold">
-            Built to specification. Verified at every revision.
-          </div>
-        </motion.div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {STEPS.map(([who, what], n) => (
-            <div key={n} className="flex items-center gap-2">
-              <div
-                className={cn(
-                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all duration-300",
-                  n === step
-                    ? "border-[#e06a2c]/70 bg-[#e06a2c]/15 text-white"
-                    : "border-white/12 bg-[#15181d]/85 text-white/60",
-                )}
-              >
-                <span
-                  className="font-mono text-[11px] font-bold"
-                  style={{ color: n === step ? ORANGE : GREEN }}
-                >
-                  {String(n + 1).padStart(2, "0")}
-                </span>
-                <span>
-                  <span className="font-semibold">{who}</span> · {what}
-                </span>
+          {FEATURES.map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex items-start gap-2.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[.06] text-[#e06a2c] ring-1 ring-white/10">
+                <Icon className="size-4" />
+              </span>
+              <div className="leading-tight">
+                <div className="text-[13px] font-bold">{title}</div>
+                <div className="mt-0.5 text-[11px] text-white/45">{text}</div>
               </div>
-              {n < STEPS.length - 1 && <span className="text-white/30">→</span>}
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
