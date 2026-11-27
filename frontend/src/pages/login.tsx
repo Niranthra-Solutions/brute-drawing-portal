@@ -15,100 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { FInput } from "@/components/app/fields";
 import { FormError, Spinner, errMsg } from "@/components/app/common";
-import { cn } from "@/lib/utils";
 import { PoweredBy } from "@/components/app/powered-by";
-import { ProductShowcase } from "@/components/app/product-showcase";
-
-const STEPS = [
-  "Search the drawing by vehicle, battery and tray size",
-  "Download it, or get the closest standard alternatives",
-  "No match? Raise a request in one standard form",
-  "Engineering uploads it — you are notified instantly",
-];
-function Hero() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((x) => (x + 1) % STEPS.length), 2200);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <section
-      className="relative flex flex-1 flex-col overflow-hidden bg-gradient-to-br from-[#1b1e23] to-[#121417] px-6 py-8 text-white lg:px-12 lg:py-10"
-      aria-label="About the portal"
-    >
-      <div className="pointer-events-none absolute -top-40 -right-40 size-[480px] rounded-full bg-[radial-gradient(circle,rgba(224,106,44,.35),transparent_70%)]" />
-      <div className="pointer-events-none absolute -bottom-36 -left-24 size-[380px] rounded-full bg-[radial-gradient(circle,rgba(95,168,80,.25),transparent_70%)]" />
-      <div className="relative z-10 flex items-center gap-4">
-        <img
-          src="/brand/amaron-brute.png"
-          alt="Amaron Brute"
-          className="h-12 w-auto"
-        />
-        <div className="h-8 w-px bg-white/20" />
-        <div className="font-heading text-[17px] font-bold">Drawing Portal</div>
-      </div>
-      <div className="min-h-4 flex-1" />
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 "
-      >
-        <h1 className="mb-3 font-heading text-[28px] leading-snug font-bold tracking-tight">
-          Every battery tray drawing. One place. Always the right revision.
-        </h1>
-        <p className="text-sm leading-relaxed text-white/65">
-          A single intranet portal for Marketing and Application Engineering:
-          search and download drawings, get closest-fit suggestions, and raise
-          modification or new-drawing requests with full traceability.
-        </p>
-      </motion.div>
-      <ProductShowcase />
-      <div className="relative z-10 mb-3.5 rounded-2xl border border-white/10 bg-white/[.04] px-[18px] py-3.5">
-        <div className="mb-3 text-[10.5px] font-bold tracking-wide text-white/45 uppercase">
-          How it works
-        </div>
-        <div className="relative grid gap-2 sm:grid-cols-4">
-          <div className="absolute top-[9px] right-2 left-2 hidden h-px bg-white/10 sm:block" />
-          {STEPS.map((s, n) => (
-            <div
-              key={n}
-              className={cn(
-                "relative flex flex-col gap-2 text-[11.5px] leading-snug transition-colors duration-300",
-                n === i ? "text-white" : "text-white/40",
-              )}
-            >
-              <motion.div
-                animate={{ scale: n === i ? 1.12 : 1 }}
-                className={cn(
-                  "relative z-10 flex size-[18px] items-center justify-center rounded-full border text-[10px] font-bold",
-                  n === i
-                    ? "border-brand bg-brand text-white"
-                    : "border-white/15 bg-[#22262c] text-white/50",
-                )}
-              >
-                {n + 1}
-              </motion.div>
-              {s}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="relative z-10 flex gap-7">
-        {[
-          ["2,000+", "Drawings centralised"],
-          ["±20/10/20", "mm closest-fit tolerance"],
-          ["100%", "Version traceable"],
-        ].map(([n, l]) => (
-          <div key={l}>
-            <div className="font-heading text-[22px] font-bold">{n}</div>
-            <div className="text-[11.5px] text-white/55">{l}</div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+import { LoginBackdrop, LoginHero } from "@/components/app/login-hero";
 
 const codeSchema = z.object({
   code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code."),
@@ -176,11 +84,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      <Hero />
-      <section className="relative flex flex-1 items-center justify-center p-7 lg:p-10">
-        <PoweredBy className="absolute right-6 bottom-4" />
-        <div className="w-full max-w-[380px]">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#0e1013] lg:flex-row">
+      <LoginBackdrop />
+      <LoginHero />
+      <section className="relative z-10 flex items-center justify-center p-5 pb-14 lg:w-[540px] lg:shrink-0 lg:p-10">
+        <PoweredBy className="absolute right-6 bottom-4 text-white/45 [&_a]:text-white/70 [&_a:hover]:text-white" />
+        <div className="w-full max-w-[420px] rounded-[28px] bg-white p-7 shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:p-9">
           <div className="mb-8 flex items-center justify-between">
             <img
               src="/brand/amaron-brute.png"
