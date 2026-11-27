@@ -1,0 +1,15 @@
+frontend/src/components/app/login-hero.tsx
+  h_51a00495fb6020 1,16-84,86-87,89-209,213,216-219,221-227,230-241,243-255,260-329,334,338-343,345-347,350-351,353-355,357-359
+  h_51a00495fb6020 228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "559695fecd4b5c5583045aa4f4e85f3f4154445c",
+  "prompts": {},
+  "humans": {
+    "h_51a00495fb6020": {
+      "author": "itsAPK <apkvandagadde2@gmail.com>"
+    }
+  }
+}
