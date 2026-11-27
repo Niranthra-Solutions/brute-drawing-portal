@@ -386,10 +386,10 @@ export function LoginHero() {
 
   return (
     <section
-      className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 text-white lg:px-14 lg:py-10"
+      className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 text-white lg:py-10 lg:pr-4 lg:pl-14"
       aria-label="About the portal"
     >
-      <div className="mx-auto w-full max-w-[900px] lg:mx-0">
+      <div className="mx-auto w-full max-w-[1040px] lg:mx-0 lg:max-w-none">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -436,7 +436,7 @@ export function LoginHero() {
           transition={{ duration: 0.6, delay: 0.15 }}
           onMouseEnter={() => setHold(true)}
           onMouseLeave={() => setHold(false)}
-          className="mt-6 grid gap-4 lg:grid-cols-[210px_minmax(0,1fr)]"
+          className="mt-6 grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)]"
         >
           <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
             {SLIDES_DATA.map((d, n) => {
@@ -488,7 +488,7 @@ export function LoginHero() {
             })}
           </div>
 
-          <div className="relative h-[270px] overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(ellipse_at_30%_55%,rgba(224,106,44,.22),transparent_60%),linear-gradient(160deg,#171b21,#0c0f12)] shadow-[0_24px_70px_rgba(0,0,0,.45)] sm:h-[330px]">
+          <div className="relative h-[300px] overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(ellipse_at_30%_55%,rgba(224,106,44,.22),transparent_60%),linear-gradient(160deg,#171b21,#0c0f12)] shadow-[0_24px_70px_rgba(0,0,0,.45)] sm:h-[380px] xl:h-[410px] min-[1700px]:h-[560px]">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={i}
@@ -509,7 +509,7 @@ export function LoginHero() {
                 <div className="absolute bottom-[34px] left-[6%] h-6 w-[58%] rounded-[50%] bg-black/60 blur-xl" />
                 <div className="absolute right-[3%] bottom-[28px] h-5 w-[40%] rounded-[50%] bg-black/55 blur-lg" />
                 <motion.div
-                  className="absolute top-[7%] bottom-[19%] left-[4%] w-[60%]"
+                  className="absolute top-[3%] bottom-[15%] left-[3%] w-[64%]"
                   initial={{ x: -60, opacity: 0, scale: 0.92 }}
                   animate={{ x: 0, opacity: 1, scale: 1 }}
                   transition={{ duration: 0.7, ease: "easeOut" }}
@@ -529,7 +529,7 @@ export function LoginHero() {
                 <motion.img
                   src={s.truck}
                   alt={s.tag}
-                  className="absolute right-[2%] bottom-[44px] h-[44%] w-[40%] object-contain drop-shadow-[0_16px_20px_rgba(0,0,0,.55)]"
+                  className="absolute right-[1%] bottom-[40px] h-[56%] w-[44%] object-contain drop-shadow-[0_16px_20px_rgba(0,0,0,.55)]"
                   initial={{ x: 140, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{
