@@ -325,27 +325,29 @@ export function LoginHero() {
                 <span className="absolute top-4 left-4 z-10 rounded-lg bg-[#e06a2c] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-widest text-white uppercase">
                   {s.tag}
                 </span>
-                <motion.img
-                  src={s.battery}
-                  alt={s.name}
-                  className="absolute top-[7%] left-[3%] h-[66%] w-[68%] object-contain object-left-top drop-shadow-[0_24px_28px_rgba(0,0,0,.65)]"
-                  initial={{ y: -80, opacity: 0, scale: 0.94 }}
-                  animate={{ y: 0, opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 70, damping: 14 }}
-                />
-                <motion.img
-                  src={s.truck}
-                  alt={s.tag}
-                  className="absolute right-[4%] bottom-[16%] h-[40%] w-[26%] object-contain object-bottom drop-shadow-[0_16px_20px_rgba(0,0,0,.6)]"
-                  initial={{ x: 120, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 60,
-                    damping: 14,
-                    delay: 0.2,
-                  }}
-                />
+                <div className="absolute inset-x-0 top-[9%] bottom-[19%] flex items-end justify-center gap-[3%] px-[3%]">
+                  <motion.img
+                    src={s.battery}
+                    alt={s.name}
+                    className="h-full max-w-[52%] min-w-0 object-contain object-bottom drop-shadow-[0_24px_28px_rgba(0,0,0,.65)]"
+                    initial={{ y: -80, opacity: 0, scale: 0.94 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 70, damping: 14 }}
+                  />
+                  <motion.img
+                    src={s.truck}
+                    alt={s.tag}
+                    className="h-[88%] max-w-[44%] min-w-0 object-contain object-bottom drop-shadow-[0_16px_20px_rgba(0,0,0,.6)]"
+                    initial={{ x: 120, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 60,
+                      damping: 14,
+                      delay: 0.2,
+                    }}
+                  />
+                </div>
                 <div className="absolute right-6 bottom-4 left-6 flex items-end justify-between gap-3">
                   <div>
                     <div className="font-heading text-[20px] leading-tight font-bold sm:text-[26px]">
