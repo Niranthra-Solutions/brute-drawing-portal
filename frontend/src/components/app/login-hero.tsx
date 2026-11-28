@@ -14,15 +14,6 @@ import { SLIDES_DATA } from "./showcase-images";
 const ORANGE = "#e06a2c";
 const INTERVAL = 5200;
 
-const CHIPS = [
-  "Voltage",
-  "Ah rating",
-  "Tray size",
-  "Connector",
-  "AFS",
-  "Drain holes",
-];
-
 const STEPS = [
   ["Marketing", "Searches the drawing"],
   ["Portal", "Suggests the closest fit"],
@@ -186,6 +177,417 @@ export function LoginBackdrop() {
 
 const shortName = (n: string) => n.replace(/ Battery Bank$/, "");
 
+type Layout = {
+  cols: number;
+  rows: number;
+  w: number;
+  h: number;
+  route: "rows" | "snake" | "stair" | "bus";
+  divider: "v" | "h" | "none";
+  blocks: 1 | 2;
+  takeoff: "top" | "bottom" | "side";
+  dim: string;
+};
+
+const LAYOUTS: Layout[] = [
+  {
+    cols: 6,
+    rows: 4,
+    w: 330,
+    h: 440,
+    route: "rows",
+    divider: "v",
+    blocks: 1,
+    takeoff: "top",
+    dim: "W=198",
+  },
+  {
+    cols: 8,
+    rows: 3,
+    w: 520,
+    h: 300,
+    route: "snake",
+    divider: "none",
+    blocks: 1,
+    takeoff: "side",
+    dim: "W=155",
+  },
+  {
+    cols: 4,
+    rows: 6,
+    w: 250,
+    h: 460,
+    route: "bus",
+    divider: "h",
+    blocks: 1,
+    takeoff: "bottom",
+    dim: "W=210",
+  },
+  {
+    cols: 3,
+    rows: 4,
+    w: 480,
+    h: 380,
+    route: "rows",
+    divider: "none",
+    blocks: 2,
+    takeoff: "top",
+    dim: "W=180",
+  },
+  {
+    cols: 5,
+    rows: 5,
+    w: 380,
+    h: 400,
+    route: "stair",
+    divider: "h",
+    blocks: 1,
+    takeoff: "side",
+    dim: "W=165",
+  },
+  {
+    cols: 4,
+    rows: 3,
+    w: 360,
+    h: 280,
+    route: "bus",
+    divider: "v",
+    blocks: 1,
+    takeoff: "bottom",
+    dim: "W=240",
+  },
+  {
+    cols: 7,
+    rows: 2,
+    w: 540,
+    h: 220,
+    route: "snake",
+    divider: "v",
+    blocks: 1,
+    takeoff: "top",
+    dim: "W=140",
+  },
+];
+
+function ConnectionLayout({ l, title }: { l: Layout; title: string }) {
+  const ink = "rgba(225,230,236,.9)";
+  const pad = 22;
+  const top = 40;
+  const vbW = l.w + pad * 2;
+  const vbH = l.h + top + 50;
+  const gap = l.blocks === 2 ? 26 : 0;
+  const innerW = l.w - 36 - gap;
+  const blockW = innerW / l.blocks;
+  const innerH = l.h - 36;
+  const ox = pad + 18;
+  const oy = top + 18;
+  const cw = blockW / l.cols;
+  const ch = innerH / l.rows;
+  const mono = "IBM Plex Mono, monospace";
+  const line = (delay: number, dur = 0.8) => ({
+    initial: { pathLength: 0, opacity: 0 },
+    animate: { pathLength: 1, opacity: 1 },
+    transition: { duration: dur, delay, ease: "easeInOut" as const },
+  });
+  const cells: {
+    x: number;
+    y: number;
+    n: number;
+    c: number;
+    r: number;
+    b: number;
+  }[] = [];
+  for (let b = 0; b < l.blocks; b++)
+    for (let r = 0; r < l.rows; r++)
+      for (let c = 0; c < l.cols; c++)
+        cells.push({
+          x: ox + b * (blockW + gap) + c * cw,
+          y: oy + r * ch,
+          n: cells.length,
+          c,
+          r,
+          b,
+        });
+  const cables: string[] = [];
+  for (const k of cells) {
+    const last = k.c === l.cols - 1;
+    if (l.route === "rows" || l.route === "snake") {
+      if (!last) {
+        const yy = k.y + (k.r % 2 ? ch - 14 : 14);
+        cables.push(
+          `M${k.x + cw - 12} ${yy}Q${k.x + cw} ${yy - 12} ${k.x + cw + 12} ${yy}`,
+        );
+      }
+      if (l.route === "snake" && last && k.r < l.rows - 1) {
+        const xx = k.r % 2 ? k.x + 14 : k.x + cw - 14;
+        cables.push(
+          `M${xx} ${k.y + ch - 10}Q${xx + (k.r % 2 ? -14 : 14)} ${k.y + ch} ${xx} ${k.y + ch + 10}`,
+        );
+      }
+    }
+    if (l.route === "stair" && !last && k.r < l.rows - 1) {
+      cables.push(
+        `M${k.x + cw - 12} ${k.y + ch - 14}L${k.x + cw + 12} ${k.y + ch + 14}`,
+      );
+    }
+    if (l.route === "bus" && k.r < l.rows - 1) {
+      const xx = k.x + (k.c % 2 ? cw - 14 : 14);
+      cables.push(`M${xx} ${k.y + ch - 12}V${k.y + ch + 12}`);
+    }
+  }
+  const busY = oy - 8;
+  const mid = {
+    v: `M${pad + 18 + innerW / 2 + (l.blocks === 2 ? gap / 2 : 0)} ${oy - 18}V${oy + innerH + 18}`,
+    h: `M${pad} ${oy + innerH / 2}H${pad + l.w}`,
+    none: "",
+  }[l.divider];
+  return (
+    <svg
+      className="pointer-events-none absolute top-[6%] right-[1%] h-[88%] w-[52%] opacity-[.34] [mask-image:linear-gradient(to_right,transparent,black_26%)]"
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      preserveAspectRatio="xMaxYMid meet"
+      fill="none"
+      stroke={ink}
+      strokeWidth="1.2"
+      aria-hidden="true"
+    >
+      <defs>
+        <pattern
+          id="hatch"
+          width="7"
+          height="7"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <path d="M0 0V7" stroke={ink} strokeWidth="1" />
+        </pattern>
+      </defs>
+      <motion.rect x={pad} y="6" width={l.w} height="24" {...line(0.1)} />
+      <text
+        x={pad + 10}
+        y="23"
+        fill={ink}
+        stroke="none"
+        fontSize="13"
+        fontFamily={mono}
+      >
+        CONNECTION LAYOUT · {title}
+      </text>
+      <motion.rect
+        x={pad}
+        y={top}
+        width={l.w}
+        height={l.h}
+        {...line(0.2, 1.1)}
+      />
+      <motion.rect
+        x={pad}
+        y={top}
+        width={l.w}
+        height={l.h}
+        fill="url(#hatch)"
+        stroke="none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        transition={{ delay: 0.9, duration: 0.8 }}
+      />
+      {Array.from({ length: l.blocks }, (_, b) => (
+        <g key={b}>
+          <rect
+            x={ox - 4 + b * (blockW + gap)}
+            y={oy - 4}
+            width={blockW + 8}
+            height={innerH + 8}
+            fill="#0f1215"
+            stroke="none"
+          />
+          <motion.rect
+            x={ox - 4 + b * (blockW + gap)}
+            y={oy - 4}
+            width={blockW + 8}
+            height={innerH + 8}
+            strokeWidth="2.6"
+            {...line(0.4, 1.2)}
+          />
+        </g>
+      ))}
+      {cells.map((k) => {
+        const d = 0.6 + k.n * 0.025;
+        const horiz = l.cols > l.rows * 1.6;
+        return (
+          <g key={k.n}>
+            <motion.rect
+              x={k.x + 2}
+              y={k.y + 2}
+              width={cw - 4}
+              height={ch - 4}
+              rx="7"
+              {...line(d, 0.7)}
+            />
+            <motion.rect
+              x={k.x + cw / 2 - (horiz ? 11 : 13)}
+              y={k.y + ch / 2 - (horiz ? 9 : 14)}
+              width={horiz ? 22 : 26}
+              height={horiz ? 18 : 30}
+              rx="8"
+              {...line(d + 0.2, 0.6)}
+            />
+            <circle cx={k.x + 14} cy={k.y + 14} r="6" />
+            <circle cx={k.x + 14} cy={k.y + 14} r="2" />
+            <circle cx={k.x + cw - 14} cy={k.y + ch - 14} r="6" />
+            <circle cx={k.x + cw - 14} cy={k.y + ch - 14} r="2" />
+            <path
+              d={`M${k.x + 10} ${k.y + ch - 20}h8M${k.x + 14} ${k.y + ch - 24}v8`}
+            />
+            <path d={`M${k.x + cw - 18} ${k.y + 14}h8`} />
+          </g>
+        );
+      })}
+      {l.blocks === 2 && (
+        <motion.path
+          d={`M${ox + blockW} ${busY}H${ox + blockW + gap}`}
+          stroke="#e06a2c"
+          strokeWidth="3.5"
+          {...line(1.5)}
+        />
+      )}
+      {cables.map((d, n) => (
+        <path
+          key={n}
+          d={d}
+          stroke="#e06a2c"
+          strokeWidth="2.6"
+          strokeDasharray="5 9"
+          className="login-anim"
+          style={{
+            animation: `login-flow 1.6s linear ${(n % 12) * 0.08}s infinite`,
+          }}
+        />
+      ))}
+      {mid && (
+        <motion.path
+          d={mid}
+          stroke="rgba(255,255,255,.95)"
+          strokeWidth="4"
+          {...line(1.4, 1)}
+        />
+      )}
+      {l.takeoff === "top" && (
+        <>
+          <motion.path
+            d={`M${ox + 14} ${oy + 14}L${pad - 6} ${top + 4}V${top + 90}`}
+            {...line(1.8)}
+          />
+          <text
+            x={pad - 12}
+            y={top + 86}
+            fill={ink}
+            stroke="none"
+            fontSize="10"
+            fontFamily={mono}
+            transform={`rotate(-90 ${pad - 12} ${top + 86})`}
+          >
+            NEG. TAKE-OFF
+          </text>
+          <motion.path
+            d={`M${pad + l.w - 32} ${oy + 14}L${pad + l.w + 6} ${top + 4}V${top + 90}`}
+            {...line(2)}
+          />
+          <text
+            x={pad + l.w + 16}
+            y={top + 20}
+            fill={ink}
+            stroke="none"
+            fontSize="10"
+            fontFamily={mono}
+            transform={`rotate(90 ${pad + l.w + 16} ${top + 20})`}
+          >
+            POS. TAKE-OFF
+          </text>
+        </>
+      )}
+      {l.takeoff === "bottom" && (
+        <>
+          <motion.path
+            d={`M${ox + 14} ${oy + innerH - 14}L${ox + 14} ${top + l.h + 22}H${ox + 110}`}
+            {...line(1.8)}
+          />
+          <text
+            x={ox + 14}
+            y={top + l.h + 38}
+            fill={ink}
+            stroke="none"
+            fontSize="10"
+            fontFamily={mono}
+          >
+            NEG. TAKE-OFF
+          </text>
+          <motion.path
+            d={`M${ox + blockW - 14} ${oy + innerH - 14}L${ox + blockW - 14} ${top + l.h + 22}H${ox + blockW - 110}`}
+            {...line(2)}
+          />
+          <text
+            x={ox + blockW - 100}
+            y={top + l.h + 38}
+            fill={ink}
+            stroke="none"
+            fontSize="10"
+            fontFamily={mono}
+          >
+            POS. TAKE-OFF
+          </text>
+        </>
+      )}
+      {l.takeoff === "side" && (
+        <>
+          <motion.path
+            d={`M${ox + 14} ${oy + innerH / 2}L${pad - 14} ${oy + innerH / 2}`}
+            {...line(1.8)}
+          />
+          <motion.path
+            d={`M${pad + l.w - 32} ${oy + innerH / 2}L${pad + l.w + 14} ${oy + innerH / 2}`}
+            {...line(2)}
+          />
+          <text
+            x={pad + l.w - 60}
+            y={oy + innerH / 2 - 8}
+            fill={ink}
+            stroke="none"
+            fontSize="10"
+            fontFamily={mono}
+          >
+            POS
+          </text>
+          <text
+            x={pad + 4}
+            y={oy + innerH / 2 - 8}
+            fill={ink}
+            stroke="none"
+            fontSize="10"
+            fontFamily={mono}
+          >
+            NEG
+          </text>
+        </>
+      )}
+      <motion.path
+        d={`M${pad} ${top + l.h + 10}V${top + l.h + 24}M${pad} ${top + l.h + 17}H${pad + 100}M${pad + 100} ${top + l.h + 10}V${top + l.h + 24}`}
+        {...line(2.2)}
+      />
+      <text
+        x={pad + 106}
+        y={top + l.h + 21}
+        fill={ink}
+        stroke="none"
+        fontSize="10"
+        fontFamily={mono}
+      >
+        {l.dim}
+      </text>
+    </svg>
+  );
+}
+
 export function LoginHero() {
   const [i, setI] = useState(0);
   const [hold, setHold] = useState(false);
@@ -336,19 +738,12 @@ export function LoginHero() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="pointer-events-none absolute -top-6 right-[8%] font-heading text-[220px] leading-none font-bold text-white/[.04] select-none">
-                  {num}
-                </div>
-                <div className="absolute top-4 right-4 z-10 hidden max-w-[52%] flex-wrap justify-end gap-1.5 sm:flex">
-                  {CHIPS.map((c) => (
-                    <span
-                      key={c}
-                      className="rounded-md border border-white/12 bg-white/[.06] px-2 py-1 font-mono text-[10.5px] tracking-wider text-white/65 uppercase"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
+                <ConnectionLayout
+                  key={`cl-${i}`}
+                  l={LAYOUTS[i % LAYOUTS.length]}
+                  title={s.tag}
+                />
+
                 <span className="absolute top-4 left-4 z-10 rounded-lg bg-[#e06a2c] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-widest text-white uppercase">
                   {s.tag}
                 </span>
