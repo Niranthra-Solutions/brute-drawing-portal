@@ -22,7 +22,11 @@ const STEPS = [
 ];
 
 const FEATURES: { icon: LucideIcon; t: string; d: string }[] = [
-  { icon: Search, t: "Search", d: "by vehicle, battery and tray size" },
+  {
+    icon: Search,
+    t: "Search",
+    d: "By Vehicle, Battery Rating and Tray Dimensions",
+  },
   { icon: Target, t: "Closest fit", d: "standard alternatives suggested" },
   { icon: FilePlus2, t: "Request", d: "modification or new drawing" },
   { icon: ShieldCheck, t: "Traceable", d: "every revision on record" },
@@ -126,20 +130,6 @@ function Blueprint() {
       />
       <circle cx="396" cy="396" r="5" stroke={LINE} />
       <circle cx="624" cy="396" r="5" stroke={LINE} />
-      <g stroke="none" fontFamily="IBM Plex Mono, monospace">
-        <rect
-          x="150"
-          y="2"
-          width="56"
-          height="20"
-          rx="3"
-          fill={ORANGE}
-          fillOpacity=".3"
-        />
-        <text x="178" y="16" fill={ORANGE} fontSize="11" textAnchor="middle">
-          REV B
-        </text>
-      </g>
     </svg>
   );
 }
@@ -160,17 +150,6 @@ export function LoginBackdrop() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_35%_-10%,rgba(255,255,255,.08),transparent_50%),radial-gradient(circle_at_8%_8%,rgba(224,106,44,.30),transparent_42%),radial-gradient(circle_at_0%_100%,rgba(95,168,80,.18),transparent_40%)]" />
       <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)] [background-size:28px_28px]" />
       <Blueprint />
-      <div className="absolute top-3 right-[3%] hidden rounded border border-white/15 bg-black/20 px-4 py-3 font-mono text-[12px] leading-6 tracking-[.18em] text-white/50 uppercase lg:block">
-        <div>
-          Drawing no. <span className="ml-3 text-white/80">25 600 002 B</span>
-        </div>
-        <div>
-          Battery <span className="ml-3 text-white/80">48V · 775 Ah</span>
-        </div>
-        <div>
-          Rev · scale <span className="ml-3 text-[#5fa850]">B · 1:10</span>
-        </div>
-      </div>
     </div>
   );
 }
@@ -681,14 +660,6 @@ export function LoginHero() {
                   <span className="leading-tight">
                     <span className="block text-[14px] font-semibold">
                       {shortName(d.name)}
-                    </span>
-                    <span
-                      className={cn(
-                        "block text-[11.5px]",
-                        active ? "text-white/80" : "text-white/45",
-                      )}
-                    >
-                      Battery bank
                     </span>
                   </span>
                   {active && !hold && (
