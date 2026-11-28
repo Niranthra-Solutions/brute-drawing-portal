@@ -87,9 +87,9 @@ export default function LoginPage() {
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#0e1013] lg:flex-row">
       <LoginBackdrop />
       <LoginHero />
-      <section className="relative z-10 flex items-center justify-center p-5 pb-14 lg:w-[480px] lg:shrink-0 lg:pt-6 lg:pr-10 lg:pb-14 lg:pl-6">
+      <section className="relative z-10 flex items-center justify-center p-5 pb-14 lg:w-[480px] lg:shrink-0 lg:py-10 lg:pr-10 lg:pl-6">
         <PoweredBy className="absolute right-6 bottom-4 text-white/45 [&_a]:text-white/70 [&_a:hover]:text-white" />
-        <div className="w-full max-w-[420px] rounded-[28px] bg-white p-7 shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:p-9 lg:flex lg:min-h-[calc(100vh-5rem)] lg:flex-col lg:justify-center lg:p-10">
+        <div className="w-full max-w-[420px] rounded-[28px] bg-white p-7 shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:p-9">
           <div className="mb-8 flex items-center justify-between">
             <img
               src="/brand/amaron-brute.png"
